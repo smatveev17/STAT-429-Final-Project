@@ -1,0 +1,46 @@
+---
+title: "429Project"
+author: "Vladislav Fedorov"
+date: "2025-10-23"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+library(dplyr)
+library(tidyverse)
+library(astsa)
+library(TSA)
+library(fpp2)
+```
+
+```{r pressure, echo=FALSE}
+co2 <- read_csv("Data.csv")
+co2 <- co2|>
+  filter(Name == "United States" & year >= 1900)
+```
+
+```{r}
+co2
+```
+
+```{r}
+temp <- read_csv("Temperature.csv")
+temp
+```
+
+```{r}
+temp_ts <- ts(temp[2], start = 1900, frequency = 1)
+tsplot(temp_ts, ylab = "Average Temperature in F", main = "Average Annual US Temperature 1900-2023")
+```
+
+```{r}
+tsplot(diff(temp_ts))
+```
+
+```{r}
+acf2(temp_ts)
+```
