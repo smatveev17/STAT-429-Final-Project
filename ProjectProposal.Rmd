@@ -47,32 +47,16 @@ Through our analysis we would like to address the following questions:
 
 
 # Time series plot and any other visual presentations
-```{r pressure, echo=FALSE}
-co2 <- read_csv("Data.csv")
+```{r, warning = FALSE}
+co2 <- read_csv("data/Data.csv", show_col_types = FALSE)
+temp <- read_csv("data/Temperature.csv", show_col_types = FALSE)
 co2 <- co2|>
   filter(Name == "United States" & year >= 1900)
 ```
 
 ```{r}
-co2
-```
-
-```{r}
-temp <- read_csv("Temperature.csv")
-temp
-```
-
-```{r}
 temp_ts <- ts(temp[2], start = 1900, frequency = 1)
 tsplot(temp_ts, ylab = "Average Temperature in F", main = "Average Annual US Temperature 1900-2023")
-```
-
-```{r}
-tsplot(diff(temp_ts))
-```
-
-```{r}
-acf2(temp_ts)
 ```
 
 # Plans for analysis (choose analysis A or B)
@@ -81,4 +65,6 @@ Analysis A:
 	We will first fit a model to predict the US average temperature using time, population, GDP, CO2, nitrous oxide, methane emissions. We will then compare it with a model that predicts temperature using just time, population and GDP as well as a model that uses time, CO2, nitrous oxide, methane emissions. Depending on our results we may need to remove insignificant terms through forward, backward, or stepwise selection and perform regression with autocorrelated errors if there are any for each model. We will then select the best model and forecast the average US temperature for the next 5 years.  If time permits we will also try to address our last question and find the strongest predictors of CO2 emissions in the United States while performing the aforementioned steps in the model building process.
 
 # GR section students should present basic ideas about analysis C 
+
+  We will first try to work with our current data and use either Long Memory ARMA and Fractional Differencing (chapter 5.1) or the Lagged Regression methods (mentioned in chapter 5.5), since these two methods seem to be the most fitting considering our data's nature. However, if there aren't any significant findings or the methods do not work, we will find a dataset which involves clearly periodic observations and work on studying its periodicities using spectral analysis. 
 
