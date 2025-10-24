@@ -2,14 +2,16 @@
 title: "429Project"
 author: "Vladislav Fedorov, Sasha Matveev"
 date: "2025-10-23"
-output: pdf_document
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r cars}
+```{r, message = FALSE, warning = FALSE}
 library(dplyr)
 library(tidyverse)
 library(astsa)
@@ -66,5 +68,5 @@ Analysis A:
 
 # GR section students should present basic ideas about analysis C 
 
-  We will first try to work with our current data and use either Long Memory ARMA and Fractional Differencing (chapter 5.1) or the Lagged Regression methods (mentioned in chapter 5.5), since these two methods seem to be the most fitting considering our data's nature. However, if there aren't any significant findings or the methods do not work, we will find a dataset which involves clearly periodic observations and work on studying its periodicities using spectral analysis. 
+  We will first try to work with our current data and use either Long Memory ARMA and Fractional Differencing (chapter 5.1) or the Lagged Regression methods (mentioned in chapter 5.5), since these two methods seem to be the most fitting considering our data's nature. However, if there aren't any new significant findings or the methods do not work, we will find a dataset which involves clearly periodic observations and work on studying its periodicities using spectral analysis. 
 
