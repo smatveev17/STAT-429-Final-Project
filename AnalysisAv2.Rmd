@@ -1,0 +1,206 @@
+---
+title: "AnalysisAV2"
+author: "Sasha Matveev"
+date: "2025-12-02"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Analysis A
+We will first fit a model to predict the US average temperature using time, population, GDP, CO2, nitrous oxide, methane emissions. We will then compare it with a model that predicts temperature using just time, population and GDP as well as a model that uses time, CO2, nitrous oxide, methane emissions.
+
+## Imports
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(astsa)
+library(TSA)
+library(fpp2)
+library(nlme)
+library(forecast)
+library(tseries)
+library(zoo)
+library(car)
+```
+
+```{r}
+co2 <- read_csv("data/Data.csv", show_col_types = FALSE)
+temp <- read_csv("data/Temperature.csv", show_col_types = FALSE)
+
+co2 <- co2 %>%
+  filter(Name == "United States" & year >= 1900)
+
+df <- co2 %>%
+  left_join(temp, by = c("year" = "Year"))
+
+head(df)
+summary(df)
+
+```
+
+## Preliminary analysis (nature of the data, data source, time series plot, preliminary analysis (Is there a trend? Is the variance increasing? Is there any pattern? Is this data stationary?)
+```{r}
+# Time series plot of temperature
+temp_ts <- ts(df$Average_Fahrenheit_Temperature, start = 1900, frequency = 1)
+tsplot(temp_ts, ylab = "Average Temperature (F)", main = "Average Annual US Temperature 1900-2023")
+```
+
+```{r}
+# Trend and stationarity
+adf.test(df$Average_Fahrenheit_Temperature)
+```
+
+```{r}
+# Emissions time series
+methane_ts <- ts(df$methane, start = min(df$year), frequency = 1)
+n2o_ts <- ts(df$nitrous_oxide, start = min(df$year), frequency = 1)
+
+ts.plot(methane_ts, n2o_ts, col=c("blue","red"), lty=1:2,
+        ylab="Emissions (Tonnes)", xlab="Year",
+        main="US Methane vs Nitrous Oxide Emissions")
+legend("topleft", legend=c("Methane","Nitrous Oxide"), col=c("blue","red"), lty=1:2, bty="n")
+```
+
+```{r}
+# Growth rates
+dlog_methane <- diff(log(methane_ts))
+dlog_n2o <- diff(log(n2o_ts))
+ts.plot(dlog_methane, dlog_n2o, col=c("blue","red"), 
+        ylab="Log Growth Rate", xlab="Year", 
+        main="Methane and N2O Growth Rates")
+legend("topright", legend=c("Methane","N2O"), col=c("blue","red"), lty=1)
+```
+
+```{r}
+# Cross-correlation and lag plots
+ccf(dlog_methane, dlog_n2o, main="CCF: Methane vs N2O Growth")
+lag2.plot(dlog_methane,dlog_no, 5)
+```
+
+```{r}
+
+
+# Rolling variance plot (window = 100 years)
+roll_var <- rollapply(df$Average_Fahrenheit_Temperature, width=100, FUN=var, by=1, align="right")
+plot(roll_var, type="l", col="darkgreen", 
+     ylab="Rolling Variance (100-year window)", xlab="Year (end of window)",
+     main="Rolling 100-Year Variance of US Temperature")
+
+mid <- floor(nrow(df)/2)
+var_first_half <- var(df$Average_Fahrenheit_Temperature[1:mid])
+var_second_half <- var(df$Average_Fahrenheit_Temperature[(mid+1):nrow(df)])
+var_first_half
+var_second_half
+
+# Levene's Test
+df$period <- ifelse(df$year <= median(df$year), "Early", "Late")
+leveneTest(Average_Fahrenheit_Temperature ~ period, data=df)
+
+```
+
+
+## Regression model suggestions (at least 2)
+```{r}
+# Full model: time + population + gdp + co2 + nitrous oxide + methane
+model_full <- lm(Average_Fahrenheit_Temperature ~ year + population + gdp + co2 + nitrous_oxide + methane, data=df)
+summary(model_full)
+```
+```{r}
+# Socioeconomic only: time + population + gdp
+model_socio <- lm(Average_Fahrenheit_Temperature ~ year + population + gdp, data=df)
+summary(model_socio)
+```
+```{r}
+# Emissions only: time + co2 + nitrous oxide + methane
+model_emissions <- lm(Average_Fahrenheit_Temperature ~ year + co2 + nitrous_oxide + methane, data=df)
+summary(model_emissions)
+```
+```{r}
+# Compare models
+AIC(model_full, model_socio, model_emissions)
+BIC(model_full, model_socio, model_emissions)
+paste0(summary(model_full)$adj.r.squared, " model full adj r squared")
+paste0(summary(model_socio)$adj.r.squared, " model socio adj r squared")
+paste0(summary(model_emissions)$adj.r.squared, " model emissions adj r squared")
+```
+
+## Regression result analysis
+
+```{r}
+# Residual plots
+par(mfrow=c(2,2))
+plot(model_full)
+plot(model_socio)
+plot(model_emissions)
+```
+
+```{r}
+# Residual autocorrelation
+acf(residuals(model_full), main="ACF of Residuals: Full Model")
+Box.test(residuals(model_full), type="Ljung-Box")
+```
+
+```{r}
+acf(residuals(model_socio), main="ACF of Residuals: Socio Model")
+Box.test(residuals(model_socio), type="Ljung-Box")
+```
+
+```{r}
+acf(residuals(model_emissions), main="ACF of Residuals: Emissions Model")
+Box.test(residuals(model_emissions), type="Ljung-Box")
+```
+
+The full model... The socio model... The emissions model...
+
+
+## Regression with autocorrelated errors (if needed)
+Not necessary based on ljung-box test results.
+
+## final model selection
+
+We prefer model...
+
+## Forecast future 5 values
+
+```{r}
+summary(df$population)
+summary(df$gdp)
+summary(df$co2)
+summary(df$nitrous_oxide)
+summary(df$methane)
+
+```
+
+```{r}
+# Last observed non-NA GDP
+last_gdp <- tail(na.omit(df$gdp), 1)
+
+future_years <- data.frame(
+  year = (max(df$year) + 1):(max(df$year) + 5),
+  population = tail(df$population,1) * (1 + 0.01)^(1:5),
+  gdp = last_gdp * (1 + 0.02)^(1:5),  # 2% growth
+  co2 = tail(df$co2,1) * (1 + 0.01)^(1:5),
+  nitrous_oxide = tail(df$nitrous_oxide,1) * (1 + 0.005)^(1:5),
+  methane = tail(df$methane,1) * (1 + 0.005)^(1:5)
+)
+
+str(future_years)
+any(is.na(future_years))
+
+
+```
+
+
+```{r}
+final_model <- model_full
+
+future_forecast <- predict(final_model, newdata = future_years, interval = "prediction")
+future_forecast
+
+```
+
+

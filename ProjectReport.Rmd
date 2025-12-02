@@ -1,0 +1,35 @@
+---
+title: "Project Report"
+author: "Sasha Matveev"
+date: "2025-12-02"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Abstract - A brief summary of your basic findings
+
+● Introduction - A brief introduction/motivation for the problem at hand, relevant details about the data, additional relevant scientific information, and what is to be addressed
+
+● Statistical Methods - A discussion and justification of the methods you have used to analyze the data and how you went about analyzing the data. Don’t forget to describe in some detail how and why the particular model was selected.
+
+● Results - A presentation of the results of your analysis. Interpretations should include a discussion of statistical versus practical import of the results.
+
+● Discussion - A synopsis of your findings and any limitations your study may suffer from. 
+
+
+
+# Abstract
+
+
+# Inroduction
+
+# Statistical Methods
+
+# Results
+
+# Discussion
+

@@ -1,0 +1,125 @@
+---
+title: "AnalysisA"
+author: "Sasha Matveev"
+date: "2025-11-10"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message = FALSE, warning = FALSE}
+library(dplyr)
+library(tidyverse)
+library(astsa)
+library(TSA)
+library(fpp2)
+```
+
+# Analysis A
+
+```{r}
+co2 <- read_csv("data/Data.csv", show_col_types = FALSE)
+temp <- read_csv("data/Temperature.csv", show_col_types = FALSE)
+co2 <- co2|>
+  filter(Name == "United States" & year >= 1900)
+```
+
+
+We will first fit a model to predict the US average temperature using time, population, GDP, CO2, nitrous oxide, methane emissions. We will then compare it with a model that predicts temperature using just time, population and GDP as well as a model that uses time, CO2, nitrous oxide, methane emissions.
+
+```{r}
+head(co2)
+head(temp)
+```
+
+```{r}
+temp_ts <- ts(temp[2], start = 1900, frequency = 1)
+tsplot(temp_ts, ylab = "Average Temperature in F", main = "Average Annual US Temperature 1900-2023")
+```
+
+## Preliminary analysis (nature of the data, data source, time series plot, preliminary analysis (Is there a trend? Is the variance increasing? Is there any pattern? Is this data stationary?)
+
+```{r}
+library(dplyr)
+
+df <- co2 %>%
+  left_join(temp, by = c("year" = "Year"))
+head(df)
+```
+
+```{r}
+methane_ts <- ts(co2$methane, start = min(co2$year),
+             end = max(co2$year), frequency = 1)
+no_ts <- ts(co2$nitrous_oxide, start = min(co2$year),
+             end = max(co2$year), frequency = 1)
+
+ts.plot(methane_ts, no_ts, col = c("blue", "red"), lty = 1:2, 
+        xlab = "Year", ylab = "Emissions in Tonnes",
+        main = "US CO2 vs Nitrous Oxide Emissions")
+
+legend("topleft", legend = c("Methane", "Nitrous Oxide"),
+       col = c("blue", "red"), lty = 1:2, bty = "n")
+```
+```{r}
+dlog_methane <- diff(log(methane_ts))
+dlog_no <- diff(log(no_ts))
+par(mfrow=c(1,1))
+ts.plot(dlog_methane, dlog_no, col=c("blue","red"),
+        ylab="Log growth rate", xlab="Time (years)",
+        main="Methane and Nitrous Oxide growth rates delta log")
+legend("topright", legend=c("methane growth","nitrous oxide growth"), col=c
+("blue","red"), lty=1)
+
+```
+
+```{r}
+par(mfrow=c(1,1))
+ccf(dlog_methane, dlog_no, main="CCF: methane growth and nitrous oxide growth")
+
+```
+
+```{r}
+lag2.plot(dlog_methane,dlog_no, 5)
+
+```
+## Regression model suggestions (at least 2)
+
+```{r}
+model1 = lm(dlog_no ~ dlog_methane)
+summary(model1)
+```
+
+```{r}
+G_t = dlog_no
+O_t= dlog_methane
+O_t_lag1 = stats::lag(O_t,-1)
+O_t_lag2 = stats::lag(O_t,-2)
+df = ts.intersect(G_t, O_t, O_t_lag1, O_t_lag2, dframe=TRUE)
+
+model2 = lm(df$G_t ~ df$O_t + df$O_t_lag1 + df$O_t_lag2 , data=df)
+summary(model2)
+```
+
+```{r}
+AIC(model1, model2)
+BIC(model1, model2)
+paste0(summary(model1)$adj.r.squared, " model 1 adj r squared")
+paste0(summary(model2)$adj.r.squared, " model 2 adj r squared")
+```
+
+
+## Regression result analysis
+
+
+# Regression with autocorrelated errors (if needed)
+
+## final model selection
+
+# Forecast future 5 values
+
+```{r}
+
+```
+
