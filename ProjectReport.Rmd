@@ -20,16 +20,32 @@ Abstract - A brief summary of your basic findings
 
 ● Discussion - A synopsis of your findings and any limitations your study may suffer from. 
 
+# Climate Change Analysis in the United States: The Impact of Emissions on Average Temperature
 
+#### Net ID:
+Sasha Matveev (matveev2)
+Vladislav Fedorov (vvf2)
 
 # Abstract
 
+The goal of the study is to investigate the relationship between greenhouse gas emissions and the average annual temperature in the United States from 1900 to 2023 while identifying the most influential factors affecting climate change over time. 
 
-# Inroduction
+# Introduction
+
+Climate change is listed as one of the most critical challenges facing humanity today by the
 
 # Statistical Methods
 
+## Analysis A
+
+## Analysis C
+
 # Results
+
+## Analysis A Results
+
+## Analysis C Results
 
 # Discussion
 
+# References
