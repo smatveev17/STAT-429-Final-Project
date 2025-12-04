@@ -82,8 +82,6 @@ lag2.plot(dlog_methane,dlog_no, 5)
 ```
 
 ```{r}
-
-
 # Rolling variance plot (window = 100 years)
 roll_var <- rollapply(df$Average_Fahrenheit_Temperature, width=100, FUN=var, by=1, align="right")
 plot(roll_var, type="l", col="darkgreen", 
