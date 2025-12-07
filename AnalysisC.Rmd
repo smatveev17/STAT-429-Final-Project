@@ -2,31 +2,33 @@
 title: "spectral"
 author: "Vladislav Fedorov"
 date: "2025-12-03"
-output: html_document
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(fig.align='center')
+knitr::opts_chunk$set(fig.width=5)
+knitr::opts_chunk$set(fig.height=3)
 ```
 
-
+\newpage
 # Analysis C Report
 
-# Abstract 
+# Literature Review
 
-# Methodologies and Reasons
-
-# Findings 
-
-# Conclusion
-
-
-
-## R Markdown
+Spectral analysis is used to detect cycles in a time series by examining its frequency structure. Basic tools like the periodogram can reveal strong cycles, but they are often quite noisy, so methods like the multitaper or wavelet approaches are used to get smoother and more reliable results. These techniques are especially helpful when the underlying cycle is not perfectly steady over time. For example, in the sunspot data, the length of the solar cycle drift across decades, making it a good case for more advanced spectral tools like wavelet transform and miltitaper analysis. With several centuries of observations, the dataset clearly shows both the dominant 11-year cycle and how its behavior evolves over time.
 
 ```{r}
 library(tidyverse)
 library(astsa)
+library(TSA)
+library(fpp2)
+library(tseries)
 ```
 
 ```{r}
@@ -34,7 +36,6 @@ data <-read_delim("SN_y_tot_V2.0.csv",
     delim = ";", escape_double = FALSE, col_names = FALSE, 
     trim_ws = TRUE, show_col_types = FALSE)
 names(data) = c("Year", "Mean Sunspots", "Mean SD", "Observations", "Marker")
-data
 ```
 
 ```{r}
@@ -43,29 +44,246 @@ data_ts <- data|>
 data_ts <- ts(data_ts, start = 1700.5)
 ```
 
-```{r}
+# Basic Time Series Analysis
+
+Since this is a time series analysis first and foremost, the initial visualization we wanted to see is the basic time series plot, which is shown below.
+
+```{r, echo = FALSE,fig.cap="Time Series Plot for Sunspot Data"}
 tsplot(data_ts)
 ```
 
-```{r}
-x <- data_ts - mean(data_ts)
-s_un <- spec.pgram(x, log = "no")
-```
+From the plot, the data clearly has a strong sinusoidal structure. The amplitude varies over time, and the cycle length does as well, indicating that the oscillation is not perfectly regular.
 
 ```{r}
-s_sm <- spec.pgram(x, spans = c(5,5), log = "no", 
-                   main="Smoothed Spectral Density")
+adf.test(data_ts)
 ```
+
+The ADF test suggests the series is stationary, although this does not affect the choice of methods here, and it is simply an interesting observation.
+
+# Periodograms
+
+When it comes to spectral analysis, the most common first approach is a periodogram - a plot showcasing dominance of different period frequencies in cycles per year. By examining the height and location of the peaks in the periodogram, we can determine which cycles are most prominent and obtain a rough estimate of their lengths. This serves as a baseline before applying smoother or more advanced techniques.
+
+```{r, echo = FALSE, fig.cap="Raw Periodogram for Sunspot Data"}
+x <- data_ts - mean(data_ts)
+s_un <- spec.pgram(x, log = "no", main = "")
+```
+
+In the figure above, we can see a spike that is most dominant at and slightly before the frequency of 0.1 cycles per year. The plot is, however, very raw and it is unclear as to which frequency is the underlying one. To obtain a better visualization, we will use simple smoothing for the periodogram
+
+```{r, fig.cap="Smoothed Periodogram"}
+s_sm <- spec.pgram(x, spans = c(5,5), log = "no", 
+                   main="")
+```
+
+With the smoothed periodogram, the dominant peak becomes much easier to see. The main frequency is slightly below 0.1 cycles per year, which corresponds to a period of roughly 11 years, consistent with what is known about sunspot activity.
 
 ```{r}
 spec <- spec.pgram(x, plot=FALSE)
 freq_max <- spec$freq[which.max(spec$spec)]
 period_est <- 1 / freq_max
-period_est
+```
+
+Now, using the frequnecy data, we estimated dominant frequency of the series by identifying the value of $f$ at which the spectral density $S(f)$ reaches its maximum:
+
+$$
+f^{\ast} = \arg\max_{f} S(f).
+$$
+
+The corresponding cycle length was then obtained by inverting this frequency:
+
+$$
+T = \frac{1}{f^{\ast}} = 10.90909 \:\:years 
+$$
+
+For appropriate procedure, we also wanted to examine the spectral density of this data by fitting an AR(p) model to the time series. It offers a parametric perspective, allowing us to assess whether the dominant periodicity remains consistent under a fitted time-series model.
+
+```{r, fig.cap="AR Spectral Density Estimate"}
+ar_fit <- ar(x, method = "yw")  
+s_ar <- spec.ar(x, main="")
+```
+
+\newpage
+
+# Complex Demodulation
+
+Since based on the time series plot the data looked like a drifting oscillation, and the referenced paper also mentioned using it, we wanted to try implementing complex demodulation as one of the methods to extract the instantaneous period. Pratt, David W., et al, however, did not provide the results of complex demodulation at both 11 and 22-year periods, and only mentioned that the 11-year-quasi-peridoicity was "highly unstable"
+
+```{r}
+x <- as.numeric(data_ts)
+t <- 1:length(x)
+f0 <- 1/period_est
+
+z <- x * exp(-1i * 2*pi*f0*t)
 ```
 
 ```{r}
-ar_fit <- ar(x, method = "yw")  
-ar_fit$order
-s_ar <- spec.ar(x, main="AR Spectral Density Estimate")
+library(signal)
+library(pracma)
+bf <- butter(4, 0.02)   
+z_lp <- filtfilt(bf, z)
+phi <- Arg(z_lp)
+phi_unwrapped <- unwrap(phi)
 ```
+
+```{r}
+phi_smooth <- filtfilt(butter(3, 0.01), phi_unwrapped)
+dphi <- c(NA, diff(phi_smooth))
+inst_freq <- dphi / (2*pi)
+inst_freq[abs(inst_freq) < 0.0005] <- NA
+
+inst_period <- 1 / inst_freq
+```
+
+```{r, fig.cap="Instantaneous Period of Sunspot Cycle (11 Years)"}
+plot(inst_period, type="l", 
+     main="",
+     ylab="Years")
+
+abline(h=11, col="red")
+```
+
+The 11 year data is, in fact, very unstable, even with multiple attempts at smoothing the phase.
+
+Now, since the paper mentioned the 22-year period being more stable, below are the findings as well.
+
+```{r}
+x <- as.numeric(data_ts)
+t <- 1:length(x)
+
+f0 <- 1/22
+z <- x * exp(-1i * 2*pi*f0*t)
+
+bf <- butter(4, 0.05)     
+z_lp <- filtfilt(bf, z)
+```
+
+```{r}
+amp <- Mod(z_lp)
+phi <- Arg(z_lp)
+phi_unwrapped <- unwrap(phi)
+bf2 <- butter(3, 0.01)
+phi_smooth <- filtfilt(bf2, phi_unwrapped)
+```
+
+```{r}
+dphi <- c(NA, diff(phi_smooth))
+inst_freq <- dphi / (2*pi)
+inst_freq[abs(inst_freq) < 1e-5] <- NA
+inst_period <- 1 / inst_freq
+```
+
+```{r, fig.cap="Instantaneous Period of Sunspot Cycle (22 Years)"}
+plot(inst_period, type="l",
+     main="",
+     ylab="Years")
+abline(h=22, col="red")
+```
+
+Now, considering the 22-year period as the period of interest, the instantaneous period still appears quite unstable. If the data was a smooth oscillation with gradually varying period, we certainly could have found a clear estimate of both period and the change in amplitude over time, since across centuries there would definitely have been some variance. However, the series is anharmonic, nonlinear, and contains multiple interacting cycle, meaning an instantaneous frequency is not exactly defined, so complex demodulation shows unstable results regardless of the defined period being 11 or 22 years.
+
+\newpage
+
+# Wavelet
+
+Traditional spectral methods, like the periodogram and AR-based estimates, assume that the underlying frequency structure is roughly constant over time. However, the sunspot series clearly shows changes in both amplitude and cycle length across decades, suggesting that a single global spectrum may not fully describe its behavior. To capture how the dominant periodicity evolves over time, we turn to wavelet analysis, which provides a time-frequency view of the data.
+
+```{r, fig.cap="Wavelet-Based Evolutive Harmonic Analysis", message = FALSE}
+library(WaveletComp)
+
+df <- data.frame(time = time(data_ts), value = as.numeric(data_ts))
+
+
+temp <- capture.output(
+  result <- analyze.wavelet(
+    df,
+    "value",
+    loess.span = 0,
+    dt = 1,
+    dj = 1/20,
+    lowerPeriod = 2,
+    upperPeriod = 256,
+    make.pval = FALSE
+  )
+)
+
+wt.image(result, 
+         color.key = "quantile",
+         legend.params = list(lab = "Power"),
+         main = "")
+
+```
+
+The wavelet power spectrum shows a clear concentration of energy around periods close to 10–12 years across the entire series, confirming the well-known sunspot cycle. The thickness and slight vertical waviness of the red band indicate that the dominant cycle length is not perfectly constant but drifts modestly over time. Higher-period components (around 20–40 years) also appear with weaker but noticeable power, reflecting longer-term variability in solar activity. Overall, the wavelet plot highlights both the persistent ~11-year cycle and its gradual fluctuations across centuries.
+
+```{r}
+power <- result$Power        
+periods <- result$Period  
+dominant_periods <- apply(power, 2, function(col) {
+  periods[which.max(col)]
+})
+
+mean_dominant_period <- mean(dominant_periods, na.rm = TRUE)
+```
+
+For each time index \( t \), let \( P(\tau, t) \) denote the wavelet power at period 
+\( \tau \).  
+The dominant period at time \( t \) is defined as
+
+$$
+\tau^{\ast}(t) = \arg\max_{\tau} P(\tau, t).
+$$
+
+The overall average dominant period is then computed as
+
+$$
+\overline{\tau} = \frac{1}{T} \sum_{t=1}^{T} \tau^{\ast}(t) = 10.9 \:\:years,
+$$
+
+where \( T \) is the number of time points with a well-defined dominant period.
+
+\newpage
+
+# Multitaper
+
+In this project, we were also interested in how the dominant cycle changes over time rather than just identifying a single global period. While the methods we used earlier provide useful information, they do not capture local variations in the cycle length very well. The multitaper approach offers a more stable way to estimate the spectrum within moving windows, allowing us to track fluctuations in the sunspot period across centuries. Using this method, we can visualize how the estimated cycle length evolves over time, as shown in the following plot. 
+
+```{r, warning = FALSE, fig.cap="Multitaper Time-Varying Period Estimate"}
+library(multitaper)
+
+win <- 96
+step <- 1
+
+periods <- c()
+years <- c()
+
+for (i in seq(1, length(x)-win, by=step)) {
+  seg <- x[i:(i+win)]
+  mt <- spec.mtm(seg, k=5, nw=3, plot=FALSE)
+  fpeak <- mt$freq[which.max(mt$spec)]
+  periods <- c(periods, 1/fpeak)
+  years <- c(years, i)
+}
+
+
+plot(years, periods, type="l", col="blue",
+     ylab="Cycle Length (Years)",
+     main="")
+
+abline(h=mean(periods), col="red", lty=2)
+
+usr <- par("usr")
+x_right <- usr[2] - 1*(usr[2] - usr[1])   # shift 5% inside the plot
+
+# Add the label
+text(x = x_right, y = mean(periods)*1.05,
+     labels = paste0("Mean = ", round(mean(periods), 2), " years"),
+     col="red", pos=4)
+```
+The multitaper rolling estimate shows that the dominant sunspot cycle varies over time, generally staying within the 9–13 year range. While the cycle is roughly centered near the expected value, noticeable fluctuations occur across different windows. The dashed red line marks the overall average cycle length of ~10.62 years, highlighting that the cycle is stable and consistent with the known information on average but not perfectly constant.
+\newpage
+# References
+
+Pratt, David W., et al. Spectral and Time-Frequency Analysis of the Sunspot Index. Royal Observatory of Belgium, 1990.
+
+Data: <https://www.sidc.be/SILSO/datafiles>
