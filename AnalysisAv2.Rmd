@@ -32,7 +32,7 @@ co2 <- read_csv("data/Data.csv", show_col_types = FALSE)
 temp <- read_csv("data/Temperature.csv", show_col_types = FALSE)
 
 co2 <- co2 %>%
-  filter(Name == "United States" & year >= 1900)
+  filter(Name == "United States" & year >= 1900 & year <= 2022)
 
 df <- co2 %>%
   left_join(temp, by = c("year" = "Year"))
@@ -41,12 +41,17 @@ head(df)
 summary(df)
 
 ```
+```{r}
+df %>%
+  select(year, population, gdp, co2, nitrous_oxide, methane, Average_Fahrenheit_Temperature) %>%
+  summarise(across(everything(), ~sum(is.na(.))))
+```
 
 ## Preliminary analysis (nature of the data, data source, time series plot, preliminary analysis (Is there a trend? Is the variance increasing? Is there any pattern? Is this data stationary?)
 ```{r}
 # Time series plot of temperature
 temp_ts <- ts(df$Average_Fahrenheit_Temperature, start = 1900, frequency = 1)
-tsplot(temp_ts, ylab = "Average Temperature (F)", main = "Average Annual US Temperature 1900-2023")
+tsplot(temp_ts, ylab = "Average Temperature (F)", main = "Average Annual US Temperature 1900-2022")
 ```
 
 ```{r}
@@ -83,7 +88,7 @@ lag2.plot(dlog_methane,dlog_no, 5)
 
 ```{r}
 # Rolling variance plot (window = 100 years)
-roll_var <- rollapply(df$Average_Fahrenheit_Temperature, width=100, FUN=var, by=1, align="right")
+roll_var <- rollapply(df$Average_Fahrenheit_Temperature, width=10, FUN=var, by=1, align="right")
 plot(roll_var, type="l", col="darkgreen", 
      ylab="Rolling Variance (100-year window)", xlab="Year (end of window)",
      main="Rolling 100-Year Variance of US Temperature")
@@ -99,7 +104,6 @@ df$period <- ifelse(df$year <= median(df$year), "Early", "Late")
 leveneTest(Average_Fahrenheit_Temperature ~ period, data=df)
 
 ```
-
 
 ## Regression model suggestions (at least 2)
 ```{r}
@@ -179,11 +183,9 @@ last_gdp <- tail(na.omit(df$gdp), 1)
 
 future_years <- data.frame(
   year = (max(df$year) + 1):(max(df$year) + 5),
-  population = tail(df$population,1) * (1 + 0.01)^(1:5),
-  gdp = last_gdp * (1 + 0.02)^(1:5),  # 2% growth
   co2 = tail(df$co2,1) * (1 + 0.01)^(1:5),
-  nitrous_oxide = tail(df$nitrous_oxide,1) * (1 + 0.005)^(1:5),
-  methane = tail(df$methane,1) * (1 + 0.005)^(1:5)
+  nitrous_oxide = tail(df$nitrous_oxide,1) * (1 + 0.01)^(1:5),
+  methane = tail(df$methane,1) * (1 + 0.01)^(1:5)
 )
 
 str(future_years)
@@ -194,7 +196,7 @@ any(is.na(future_years))
 
 
 ```{r}
-final_model <- model_full
+final_model <- model_emissions
 
 future_forecast <- predict(final_model, newdata = future_years, interval = "prediction")
 future_forecast
@@ -202,3 +204,12 @@ future_forecast
 ```
 
 
+Abstract - A brief summary of your basic findings
+
+Introduction - A brief introduction/motivation for the problem at hand, relevant details about the data, additional relevant scientific information, and what is to be addressed
+
+Statistical Methods - A discussion and justification of the methods you have used to analyze the data and how you went about analyzing the data. Don’t forget to describe in some detail how and why the particular model was selected.
+
+Results - A presentation of the results of your analysis. Interpretations should include a discussion of statistical versus practical import of the results.
+
+Discussion - A synopsis of your findings and any limitations your study may suffer from. 
