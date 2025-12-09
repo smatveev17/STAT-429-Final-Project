@@ -3,6 +3,8 @@ title: "spectral"
 author: "Vladislav Fedorov"
 date: "2025-12-03"
 output:
+  html_document:
+    df_print: paged
   pdf_document:
     latex_engine: xelatex
 ---
@@ -49,13 +51,13 @@ data_ts <- ts(data_ts, start = 1700.5)
 Since this is a time series analysis first and foremost, the initial visualization we wanted to see is the basic time series plot, which is shown below.
 
 ```{r, echo = FALSE,fig.cap="Time Series Plot for Sunspot Data"}
-tsplot(data_ts)
+tsplot(data_ts, ylab = "Mean Number of Sunspots")
 ```
 
 From the plot, the data clearly has a strong sinusoidal structure. The amplitude varies over time, and the cycle length does as well, indicating that the oscillation is not perfectly regular.
 
 ```{r}
-adf.test(data_ts)
+adf.test(data_ts, )
 ```
 
 The ADF test suggests the series is stationary, although this does not affect the choice of methods here, and it is simply an interesting observation.
@@ -284,6 +286,6 @@ The multitaper rolling estimate shows that the dominant sunspot cycle varies ove
 \newpage
 # References
 
-Pratt, David W., et al. Spectral and Time-Frequency Analysis of the Sunspot Index. Royal Observatory of Belgium, 1990.
+Berger A., et al. Evolutive Spectral Analysis of Sunspot Data over the past 300 years. Royal Society, 1990.
 
 Data: <https://www.sidc.be/SILSO/datafiles>
