@@ -1,152 +1,629 @@
 ---
-title: "Project Report"
-author: "Sasha Matveev"
-date: "2025-12-02"
-output: pdf_document
+title: "Climate Change Analysis in the United States: The Impact of Socioeconomic and Industry on Average Temperature and Wolf Sunspot Cycle Spectral Analysis"
+author: "Sasha Matveev  netID(matveev2) Vladislav Fedorov netID(vvf2)"
+
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(fig.align='center')
+knitr::opts_chunk$set(fig.width=5)
+knitr::opts_chunk$set(fig.height=3)
+```
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(astsa)
+library(TSA)
+library(fpp2)
+library(nlme)
+library(forecast)
+library(tseries)
+library(zoo)
+library(car)
+library(knitr)
+library(kableExtra)
 ```
 
 
-
-# Climate Change Analysis in the United States: The Impact of Socioeconomic and Industry on Average Temperature
-
-#### Net ID:
-Sasha Matveev (matveev2)
-Vladislav Fedorov (vvf2)
+\pagebreak
 
 # Abstract
 
-The goal of the study is to investigate the relationship between greenhouse gas emissions and the average annual temperature in the United States from 1900 to 2023 while identifying the most influential factors affecting climate change over time. We used... We found...
-
-\pagebreak
+The goal of the study is split into two parts, the goal of Analysis A is to investigate the relationship between greenhouse gas emissions and the average annual temperature in the United States from 1900 to 2023 while identifying the most influential factors affecting climate change over time. The goal of Analysis C is to investigate and confirm the underlying periodicity of Wolf sunspot solar cycle. In Analysis A we compared three models fit on exclusive social factors, exclusively emissions factors and a third model fit on both catergories of climate change factors to determine the strongest predictors of the average annual temperature. We found that the emissions model provided the best fit for the data and was able to forecast future values, capturing actual average annual temperatures within the 95% confidence intervals for 2023 and 2024. For Analysis C we used multiple spectral analysis tools, which included periodograms, wavelet analysis, and multitaper analysis, and were able to confirm that the most dominant period of the sunspot solar cycle is approximately 11 years, which is consistent with the past research. 
+# Analysis A Climate Change
 
 # Introduction
 
-Climate change is listed as one of the most critical challenges facing humanity today by the United Nations, affecting everything from "...shifting weather patterns that threaten food production, to rising sea levels that increase the risk of catastrophic flooding, the impacts of climate change are global in scope and unprecedented in scale. Without drastic action today, adapting to these impacts in the future will be more difficult and costly "(UN source). There are numerous social, industrial, geographic, economic, and historic factors that contribute to climate change, making it a complex issue that is difficult to model. As such, over the course of this study we will focus primarily on the industrial factors such as greenhouse gas emissions and socio-economic factors such as changes in population and gross domestic product (GDP). This study aims to analyze the social and environmental factors that contribute the most to climate change in the United States at the individual level as well as in a combined setting, withe the impact tracked by the average annual temperature in the country from 1900 to 2022. Through regression modeling and time series analysis, we look to identify the strongest contributors to climate change as well as the factors that offer the best predictive power for forecasting future temperature changes in the US so that policy makers can better understand the issue and have reliable data to base potential mitigation strategies on.
+Climate change is listed as one of the most critical challenges facing humanity today by the United Nations, affecting everything from "...shifting weather patterns that threaten food production, to rising sea levels that increase the risk of catastrophic flooding, the impacts of climate change are global in scope and unprecedented in scale. Without drastic action today, adapting to these impacts in the future will be more difficult and costly "(United Nations). There are numerous social, industrial, geographic, economic, and historic factors that contribute to climate change, making it a complex issue that is difficult to model. As such, over the course of this study we will focus primarily on the industrial factors such as greenhouse gas emissions and socio-economic factors such as changes in population and gross domestic product (GDP). This study aims to analyze the social and environmental factors that contribute the most to climate change in the United States at the individual level as well as in a combined setting, withe the impact tracked by the average annual temperature in the country from 1900 to 2022. Through regression modeling and time series analysis, we look to identify the strongest contributors to climate change as well as the factors that offer the best predictive power for forecasting future temperature changes in the US so that policy makers can better understand the issue and have reliable data to base potential mitigation strategies on.
 
 # Data Overview
 
 The original emissions data comes from Our World in Data and was compiled by Shreyansh Dangi for use on kaggle. The data includes global carbon dioxide (CO2) and other greenhouse gas emissions across countries, and sectors while also combining variables describing the countries in the dataset such as population, GDP, and energy consumption. Each row is a country and a given year so the time unit is yearly. The analysis in this study will be focusing on the United States from 1900-2022. The variables of interest are time (year), the population, GDP (inflation adjusted and cost-of-living adjusted in dollars), CO2 emissions (million tons), methane emissions (tons), nitrous oxide emissions (tons), as well as the average annual temperature in Fahrenheit from the supplementary dataset. The supplementary dataset containing the average annual temperature in the US comes from the National Centers for Environmental Information (NCEI) and was made available on kaggle by Gia Bách Nguyen. The data is based on observations from a network of thousands of weather stations across the United States in the same exact time period (1900-2022) as the primary dataset containing emissions data and is also yearly.
 
-# Statistical Methods
+# Statistical Methods:
 
-## Analysis A
+### Preliminary analysis
 
-#### Preliminary analysis (nature of the data, data source, time series plot, preliminary analysis (Is there a trend? Is the variance increasing? Is there any pattern? Is this data stationary?)
+The temperature time series was analyzed through exploratory data analysis techniques, including both statistical and visual inspections of graphs. The time series plot in Figure 1 does not show any seasonality but does show a very weak upward trend over time, as expected based on prior background knowledge of rising temperatures.
 
-The temperature time series was analyzed through exploratory data analysis techniques, including both statistical and visual inspections of graphs. The time series plot in Figure 1 does not show any seasonality but does show a very weak upward trend over time, as expected based on prior background knowledge of rising temperatures. 
+```{r, include = FALSE}
+co2 <- read_csv("data/Data.csv", show_col_types = FALSE)
+temp <- read_csv("data/Temperature.csv", show_col_types = FALSE)
+
+co2 <- co2 %>%
+  filter(Name == "United States" & year >= 1900 & year <= 2022)
+
+df <- co2 %>%
+  left_join(temp, by = c("year" = "Year"))
+
+df %>%
+  select(year, population, gdp, co2, nitrous_oxide, methane, Average_Fahrenheit_Temperature) %>%
+  summarise(across(everything(), ~sum(is.na(.))))
+```
+
+```{r, fig.cap= "Time Series Plot of Average Annual US Temperature (1900-2022)"}
+temp_ts <- ts(df$Average_Fahrenheit_Temperature, start = 1900, frequency = 1)
+tsplot(temp_ts, ylab = "Average Temperature (F)", main = "Average Annual US Temperature 1900-2022")
+```
+
+The variance plot does not appear to show a pattern of either increasing or decreasing over time. Furthermore, to examine the variance through a statistical manner, a Levene's test was performed by separating the data into two groups chronologically up to the halfway point. The result was a p-value of 0.64 so there was not enough statistically significant evidence to conclude a difference of variance between our two groups, giving more credability to the claim of having a lack of change in variance over time. The variance plot can be seen in Figure 2 below.
+
+```{r,  fig.cap= "Rolling 100-Year Variance of US Temperature"}
+# Rolling variance plot (window = 100 years)
+roll_var <- rollapply(df$Average_Fahrenheit_Temperature, width=10, FUN=var, by=1, align="right")
+plot(roll_var, type="l", col="darkgreen", 
+     ylab="Rolling Variance (100-year window)", xlab="Year (end of window)",
+     main="")
 
 
-Figure 1: Time Series Plot of Average Annual US Temperature (1900-2022)
+```
 
-The variance plot does not appear to show a pattern of either increasing or decreasing over time. Furthermore, to examine the variance through a statistical manner, a Levene's test was performed by separating the data into two groups chronologically up to the halfway point. The result was a p-value of 0.64 so there was not enough statistically significant evidence to conlcude a difference of variance between our two groups, giving more credability to the claim of having a lack of change in variance over time. Based on the results of the Augmented Dickey-Fuller test we have a p-value = 0.0224 so we have enough statistically significant evidence to reject the null hypothesis of non-stationarity and conclude that the temperature time series is actually stationary. Thus we do not need to perform any further transformations to the data to achieve stationarity prior to fitting regression models. 
+Based on the results of the Augmented Dickey-Fuller test we have a p-value = 0.0224 so we have enough statistically significant evidence to reject the null hypothesis of non-stationarity and conclude that the temperature time series is actually stationary. Thus we do not need to perform any further transformations to the data to achieve stationarity prior to fitting regression models.
 
-#### Regression model suggestions (at least 2)
+### Regression Models
 
 In order to examine the questions posed by the study we will fit three regression models to predict the average annual temperature in the US. The models will differ only in the variables they are fitted on, with the first model will include all potential predictors, both emissions and social including : time (year), population, GDP, CO2 emissions, methane emissions, and nitrous oxide emissions. The second model aims to test the impact of social and demographic factors on the average annual temperature in the US. Therefore the second model will include only social predictors: time (year), population, and GDP. Lastly, the third model is constructed to isolate the emissions factors and examine the relationship between time (year) and the three most common types of emissions including CO2 emissions, methane emissions, nitrous oxide emissions with the average annual temperature in the US between 1900 and 2022.A succinct summary of the variables in the three models is shown in Table 1 below.
 
-Table 1: Summary of Variables in Regression Models
-| Model                  | Predictors                                      |
-|------------------------|-------------------------------------------------|
-| Full Model             | year, population, gdp, co2, methane, nitrous_oxide |
-| Social Factors Only    | year, population, gdp                           |
-| Emissions Only         | year, co2, methane, nitrous_oxide               |s
+```{r}
+# We used chatGPT to organize this data in a table within R Markdown
 
-The reason behind the categories of variables chosen is to test the impact of varying climate change factors both independently and together. The full model will allow us to see the combined effect of both social and emissions factors on the average annual temperature in the US. The social factors only model will help us understand how much of the change in temperature can be explained by demographic and economic factors alone, while the emissions only model will isolate the effect of greenhouse gas emissions on temperature changes, which is often attributed as  the driving force behind climate change in the time period examined in this study. 
+model_table <- data.frame(
+  Model = c("Full Model", "Social Factors Only", "Emissions Only"),
+  Predictors = c(
+    "year, population, gdp, co2, methane, nitrous_oxide",
+    "year, population, gdp",
+    "year, co2, methane, nitrous_oxide"
+  )
+)
 
-#### Regression result analysis
+model_table %>%
+  kable(
+    caption = "Summary of Variables in Regression Models",
+    col.names = c("Model", "Predictors"),
+    booktabs = TRUE,
+    align = c("l", "l")
+  ) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
 
-The full model including all predictors, both social and emissions factors, showed that only the CO2 predictor was significant at alpha =0.05 level when performing the t-test. No other predictor came even close to being significant. The adjusted R-squared value for the full model was 0.3272 , indicating that approximately 32.72 % of the variance in average annual temperature in the U.S. between 1900 and 2022 can be explained by the proposed model. 
+The reason behind the categories of variables chosen is to test the impact of varying climate change factors both independently and together. The full model will allow us to see the combined effect of both social and emissions factors on the average annual temperature in the US. The social factors only model will help us understand how much of the change in temperature can be explained by demographic and economic factors alone, while the emissions only model will isolate the effect of greenhouse gas emissions on temperature changes, which is often attributed as the driving force behind climate change in the time period examined in this study.
 
-The social factors only model showed that none of the predictors were significant at alpha =0.05 level. The closest variable to being significant was gdp with a p-value of 0.0599. Like in the full model, the year and population predictors were not significant. The adjusted R-squared value for the social factors only model was relatively high at 0.3147, meaning 31.47% of the variance in the average U.S. annual temperature between 1900 and 2022 can be explained by the social factors only model, where no predictor was significant at the alpha=0.05 level. 
+### Regression Result Analysis
 
-The emissions model had two predictors that were significant at the alpha=0.05 level, including CO2 and methane emissions with p-values of 0.000531 and 0.000520, respectively. The nitrous oxide predictor was not significant with a p-value of 0.120. The adjusted R-squared value for the emissions only model was 0.3314 , indicating that 34.13% of the variance in average annual temperature in the U.S. between 1900 and 2022 can be explained by the emissions only model. The year variable was far from being significant once again with a p-value of 0.5956 but the nitrous oxide variable was much closer to being significant. 
+The full model including all predictors, both social and emissions factors, showed that only the CO2 predictor was significant at alpha =0.05 level when performing the t-test. No other predictor came even close to being significant. The adjusted R-squared value for the full model was 0.3272 , indicating that approximately 32.72 % of the variance in average annual temperature in the U.S. between 1900 and 2022 can be explained by the proposed model. Full model summary and diagnostics for each model can be found in the Appendix section.
 
-The model diagnostics for all models are relatively similar despite having different predictors. The residuals vs  fitted values plot shows no signs of nonlinearity nor heteroscedasticity for all models. The Q-Q plots for all models show slight deviations from normality in the tails but given the relatively small dataset size of 123 observations this is expected. Observation 35 was noted to be a potential point to be removed due to moderate influence however based on domain knowledge we decided to keep it in the dataset as it was characteristic of the wild weather patterns of the 1930s which saw devastingly cold winters and the infamous Dust Bowl which wreaked havoc across the Midwest. 
+The social factors only model showed that none of the predictors were significant at alpha =0.05 level. The closest variable to being significant was gdp with a p-value of 0.0599. Like in the full model, the year and population predictors were not significant. The adjusted R-squared value for the social factors only model was relatively high at 0.3147, meaning 31.47% of the variance in the average U.S. annual temperature between 1900 and 2022 can be explained by the social factors only model, where no predictor was significant at the alpha=0.05 level.
 
-#### Regression with autocorrelated errors (if needed)
+The emissions model had two predictors that were significant at the alpha=0.05 level, including CO2 and methane emissions with p-values of 0.000531 and 0.000520, respectively. The nitrous oxide predictor was not significant with a p-value of 0.120. The adjusted R-squared value for the emissions only model was 0.3314 , indicating that 34.13% of the variance in average annual temperature in the U.S. between 1900 and 2022 can be explained by the emissions only model. The year variable was far from being significant once again with a p-value of 0.5956 but the nitrous oxide variable was much closer to being significant.
+
+The model diagnostics for all models are relatively similar despite having different predictors. The residuals vs fitted values plot shows no signs of nonlinearity nor heteroscedasticity for all models. The Q-Q plots for all models show slight deviations from normality in the tails but given the relatively small dataset size of 123 observations this is expected. Observation 35 was noted to be a potential point to be removed due to moderate influence however based on domain knowledge we decided to keep it in the dataset as it was characteristic of the wild weather patterns of the 1930s which saw devastingly cold winters and the infamous Dust Bowl which wreaked havoc across the Midwest.
+
+### Regression with Autocorrelated Errors
 
 Since the residuals of all models showed no signs of autocorrelation based on the acf plot and the Ljung-Box test p-values were all higher than alpha =0.05 , there was no need to fit regression models with autocorrelated errors.
 
-#### final model selection
+### Final model selection
 
-The lowest AIC value was observed in the emissions only model with an AIC = 411.5568. The lowest BIC value belongs to the social model with a BIC of 427.6950. Lastly, the highest adjusted R^2 value belongs to the emissions only model as mentioned previously with a value of .3314. A complete breakdown of the AIC, BIC and adjusted R-squared values for all models is shown in Table 2 below.
+The lowest AIC value was observed in the emissions only model with an AIC = 411.5568. The lowest BIC value belongs to the social model with a BIC of 427.6950. Lastly, the highest adjusted R\^2 value belongs to the emissions only model as mentioned previously with a value of .3314. A complete breakdown of the AIC, BIC and adjusted R-squared values for all models is shown in Table 2 below.
 
-Table 2: Model Comparison Metrics
-| Model                  | AIC        | BIC        | Adjusted R-squared |
-|------------------------|------------|------------|--------------------|
-| Full Model             | 414.2226   | 436.7201   | 0.3272             |
-| Social Factors Only    | 413.6341   | 427.6950   | 0.3147             |
-| Emissions Only         | 411.5568   | 428.4299   | 0.3314             |
+```{r}
+# We used chatGPT to organize this data in a table within R Markdown
+model_metrics <- data.frame(
+  Model = c("Full Model", "Social Factors Only", "Emissions Only"),
+  AIC = c(414.2226, 413.6341, 411.5568),
+  BIC = c(436.7201, 427.6950, 428.4299),
+  Adjusted_R_squared = c(0.3272, 0.3147, 0.3314)
+)
 
-We know that lower AIC and BIC values indicate a better fitting model while higher adjusted R-squared values indicate a better fitting model. Furthermore, BIC tends to prefer smaller models. Based on the model comparison metrics, the emissions only model will be selected as the final model for forecasting purposes since it has both the lowest AIC value and the highest adjusted R-squared value while having a BIC value very close to the lowest one observed in the social model  
+model_metrics %>%
+  kable(
+    caption = "Model Comparison Metrics",
+    col.names = c("Model", "AIC", "BIC", "Adjusted R-squared"),
+    booktabs = TRUE,
+    align = c("l", "c", "c", "c"),
+    digits = 4
+  ) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
 
-####Forecast future 5 values
+We know that lower AIC and BIC values indicate a better fitting model while higher adjusted R-squared values indicate a better fitting model. Furthermore, BIC tends to prefer smaller models. Based on the model comparison metrics, the emissions only model will be selected as the final model for forecasting purposes since it has both the lowest AIC value and the highest adjusted R-squared value while having a BIC value very close to the lowest one observed in the social model
+
+### Forecast future 5 values
 
 The best model found was the emissions only model which included year, co2, methane, and nitrous oxide as predictors. Using this model we forecasted the average annual temperature in the US for the next 5 years (2023-2027) based on a growth rate of 1 percent per year for each emissions predictor. The forecasted values are shown in Table 3 below.
 
-Table 3: Forecasted Average Annual US Temperature (2023–2027)
-| Year | Forecasted Temperature (F) | Lower 95% CI | Upper 95% CI |
-|------|----------------------------|--------------|--------------|
-| 2023 | 53.48625                   | 50.89185     | 56.08065     |
-| 2024 | 53.51607                   | 50.92124     | 56.11089     |
-| 2025 | 53.54634                   | 50.95109     | 56.14158     |
-| 2026 | 53.57706                   | 50.98139     | 56.17273     |
-| 2027 | 53.60825                   | 51.01214     | 56.20435     |
+```{r}
+# We used chatGPT to organize this data in a table within R Markdown
+forecast_table <- data.frame(
+  Year = 2023:2027,
+  Forecasted_Temperature_F = c(53.48625, 53.51607, 53.54634, 53.57706, 53.60825),
+  Lower_95_CI = c(50.89185, 50.92124, 50.95109, 50.98139, 51.01214),
+  Upper_95_CI = c(56.08065, 56.11089, 56.14158, 56.17273, 56.20435)
+)
 
-Since the official temperature data for 2023 and 2024 has been released by NCEI, we can compare our forecasted values to the actual observed values. In 2023 the actual average annual temperature in the US was 54.4 F while our forecasted value was 53.48625 F. In 2024 the actual average annual temperature in the US was 55.5 F while our forecasted value was 53.51607 F. Thus our model underestimated the average annual temperature in both years by approximately 0.9 F in 2023 and 1.98 F in 2024. This discrepancy is not surprising given the simplicity of our model and the fact that we assumed a constant growth rate of 1 percent per year for each emissions predictor. It should be noted however, that the point estimate is oftentimes rarely accurate in predicting future values, especially as we extrapolate further from the observations used to fit the model. In looking at the confidence intervals for our forecasted values, we can see that both actual observed values for 2023 and 2024 fall well within the 95% confidence intervals of our forecasts for the average annual temperature, indicating that while the point estimates were not accurate, the model was still able to forecast future values moderately well. 
+forecast_table %>%
+  kable(
+    caption = "Forecasted Average Annual US Temperature (2023–2027)",
+    col.names = c("Year", "Forecasted Temperature (F)", "Lower 95% CI", "Upper 95% CI"),
+    booktabs = TRUE,
+    align = c("c", "c", "c", "c"),
+    digits = 4
+  ) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+Since the official temperature data for 2023 and 2024 has been released by NCEI, we can compare our forecasted values to the actual observed values. In 2023 the actual average annual temperature in the US was 54.4 F while our forecasted value was 53.48625 F. In 2024 the actual average annual temperature in the US was 55.5 F while our forecasted value was 53.51607 F. Thus our model underestimated the average annual temperature in both years by approximately 0.9 F in 2023 and 1.98 F in 2024. This discrepancy is not surprising given the simplicity of our model and the fact that we assumed a constant growth rate of 1 percent per year for each emissions predictor. It should be noted however, that the point estimate is oftentimes rarely accurate in predicting future values, especially as we extrapolate further from the observations used to fit the model. In looking at the confidence intervals for our forecasted values, we can see that both actual observed values for 2023 and 2024 fall well within the 95% confidence intervals of our forecasts for the average annual temperature, indicating that while the point estimates were not accurate, the model was still able to forecast future values moderately well.
 
 # Discussion & Conclusion
 
 Overall, the best model proposed by this study explains only 33.14% of the variance in average annual temperature in the US between 1900 and 2022. The result is indicative of the complexity of the issue of climate change as a whole, because there are numerous factors that contribute to it beyond just the three main greenhouse gas emissions explored by the study within the emissions model. Given that the year variable was not significant in the final model, the findings suggest that the increases in average annual temperature in the US over time are not driven by time components but rather by external socioeconomic factors among which are greenhouse gas emissions. This finding aligns with the stationary of the temperature time series observed in the preliminary analysis based on the adf test results. The two most significant predictors based on the lowest p-values from the t-test in the emissions model were somewhat unsurprisingly CO2 and methane emissions as they are widely regarded to be among the most common greenhouse gasses contributing to climate change.
 
-Another potential major shortcoming of this model is its simplicity as we include a relatively small number of predictors (four) with a total of 123 observations from just a single country. The climate and socioeconomic patterns observed within the United States are not entirely representative of global trends so the model may struggle to generalize to other countries or continents. The decision to keep the models small was mainly done for the purpose of preserving interpretability while also keeping the task manageable from a time perspective. 
+Another potential major shortcoming of this model is its simplicity as we include a relatively small number of predictors (four) with a total of 123 observations from just a single country. The climate and socioeconomic patterns observed within the United States are not entirely representative of global trends so the model may struggle to generalize to other countries or continents. The decision to keep the models small was mainly done for the purpose of preserving interpretability while also keeping the task manageable from a time perspective.
 
-Future studies may explore various avenues of improving upon the results achieved by this exploration. As mentioned previously, expanding the dataset to include more countries and potentially more variables such as deforestation rates, industrial activity levels, energy production and consumption could all assist in making the model more robust and capture more of the variance in the average annual temperature. Making the model more robus may also increase the accuracy of its forecasting although more complex models are more likely to overfit so a balance should be struck. In addition, a different target variable may be used to model different aspects of climate change such as sea level rise. Furthermore, a potential area of improvement to the current modeling approach that is relatively easy to implement but was beyond the scope of the study is the use of model selection techniques such as forward, backward, or stepwise selection to remove statistically insignificant predictors from the results. 
+Future studies may explore various avenues of improving upon the results achieved by this exploration. As mentioned previously, expanding the dataset to include more countries and potentially more variables such as deforestation rates, industrial activity levels, energy production and consumption could all assist in making the model more robust and capture more of the variance in the average annual temperature. Making the model more robus may also increase the accuracy of its forecasting although more complex models are more likely to overfit so a balance should be struck. In addition, a different target variable may be used to model different aspects of climate change such as sea level rise. Furthermore, a potential area of improvement to the current modeling approach that is relatively easy to implement but was beyond the scope of the study is the use of model selection techniques such as forward, backward, or stepwise selection to remove statistically insignificant predictors from the results.
 
-The study shows that the primary factors associated with a change in the average annual temperature in the U.S. between 1900 and 2022 were CO2 and methane emissions. Another factor that showed some association with the average annual temperature was GDP in the social factors only model which makes sense as GDP is a measure of economic activity and industry which produce greenhouse gas emissions. The emissions model fit with the CO2 and methane emissions predictors offered moderate forecasting power for the average annual temperature over the next five years with confidence intervals that contained the actual observed values for 2023 and 2024. The techniques implemented in this study highlight the complexity of climate change as an issue but highlight the potential to model and forecast its effects using statistical methods to provide lawmakers with actionable insights that could be used to alleviate its impact on humanity in the coming century. 
+The study shows that the primary factors associated with a change in the average annual temperature in the U.S. between 1900 and 2022 were CO2 and methane emissions. Another factor that showed some association with the average annual temperature was GDP in the social factors only model which makes sense as GDP is a measure of economic activity and industry which produce greenhouse gas emissions. The emissions model fit with the CO2 and methane emissions predictors offered moderate forecasting power for the average annual temperature over the next five years with confidence intervals that contained the actual observed values for 2023 and 2024. The techniques implemented in this study highlight the complexity of climate change as an issue but highlight the potential to model and forecast its effects using statistical methods to provide lawmakers with actionable insights that could be used to alleviate its impact on humanity in the coming century.
+
+\newpage
+
+# Analysis C Report
+
+# Introduction
+
+Magnetic activity of the Sun is an important topic in astronomy, both today and in the past, because it is a driving factor in solar flares and solar storms, knowing which is...
+Now, 
+
+# Literature Review
+
+Spectral analysis is used to detect cycles in a time series by examining its frequency structure. Basic tools like the periodogram can reveal strong cycles, but they are often quite noisy, so methods like the multitaper or wavelet approaches are used to get smoother and more reliable results. These techniques are especially helpful when the underlying cycle is not perfectly steady over time. For example, in the sunspot data, the length of the solar cycle drift across decades, making it a good case for more advanced spectral tools like wavelet transform and miltitaper analysis. With several centuries of observations, the dataset clearly shows both the dominant 11-year cycle and how its behavior varies over time. 
+In a related paper, ...
+
+```{r}
+library(tidyverse)
+library(astsa)
+library(TSA)
+library(fpp2)
+library(tseries)
+```
+
+```{r}
+data <-read_delim("SN_y_tot_V2.0.csv", 
+    delim = ";", escape_double = FALSE, col_names = FALSE, 
+    trim_ws = TRUE, show_col_types = FALSE)
+names(data) = c("Year", "Mean Sunspots", "Mean SD", "Observations", "Marker")
+```
+
+```{r}
+data_ts <- data|>
+  select(c(2))
+data_ts <- ts(data_ts, start = 1700.5)
+```
+
+# Statistical Methods:
+
+### Basic Time Series Analysis
+
+Since this is a time series analysis first and foremost, the initial visualization we wanted to see is the basic time series plot, which is shown below.
+
+```{r, echo = FALSE,fig.cap="Time Series Plot for Sunspot Data"}
+tsplot(data_ts, ylab = "Mean Number of Sunspots")
+```
+
+From the plot, the data clearly has a strong sinusoidal structure. The amplitude varies over time, and the cycle length does as well, indicating that the oscillation is not perfectly regular.
+
+```{r}
+adf.test(data_ts, )
+```
+
+The ADF test suggests the series is stationary, although this does not affect the choice of methods here, and it is simply an interesting observation.
+
+### Periodograms
+
+When it comes to spectral analysis, the most common first approach is a periodogram - a plot showcasing dominance of different period frequencies in cycles per year. By examining the height and location of the peaks in the periodogram, we can determine which cycles are most prominent and obtain a rough estimate of their lengths. This serves as a baseline before applying smoother or more advanced techniques.
+
+```{r, echo = FALSE, fig.cap="Raw Periodogram for Sunspot Data"}
+x <- data_ts - mean(data_ts)
+s_un <- spec.pgram(x, log = "no", main = "")
+```
+
+In the figure above, we can see a spike that is most dominant at and slightly before the frequency of 0.1 cycles per year. The plot is, however, very raw and it is unclear as to which frequency is the underlying one. To obtain a better visualization, we will use simple smoothing for the periodogram
+
+```{r, fig.cap="Smoothed Periodogram"}
+s_sm <- spec.pgram(x, spans = c(5,5), log = "no", 
+                   main="")
+```
+
+With the smoothed periodogram, the dominant peak becomes much easier to see. The main frequency is slightly below 0.1 cycles per year, which corresponds to a period of roughly 11 years, consistent with what is known about sunspot activity.
+
+```{r}
+spec <- spec.pgram(x, plot=FALSE)
+freq_max <- spec$freq[which.max(spec$spec)]
+period_est <- 1 / freq_max
+```
+
+Now, using the frequnecy data, we estimated dominant frequency of the series by identifying the value of $f$ at which the spectral density $S(f)$ reaches its maximum:
+
+$$
+f^{\ast} = \arg\max_{f} S(f).
+$$
+
+The corresponding cycle length was then obtained by inverting this frequency:
+
+$$
+T = \frac{1}{f^{\ast}} = 10.90909 \:\:years 
+$$
+
+For appropriate procedure, we also wanted to examine the spectral density of this data by fitting an AR(p) model to the time series. It offers a parametric perspective, allowing us to assess whether the dominant periodicity remains consistent under a fitted time-series model.
+
+```{r, fig.cap="AR Spectral Density Estimate"}
+ar_fit <- ar(x, method = "yw")  
+s_ar <- spec.ar(x, main="")
+```
+
+\newpage
+
+### Complex Demodulation
+
+Since based on the time series plot the data looked like a drifting oscillation, and the referenced paper also mentioned using it, we wanted to try implementing complex demodulation as one of the methods to extract the instantaneous period. Pratt, David W., et al, however, did not provide the results of complex demodulation at both 11 and 22-year periods, and only mentioned that the 11-year-quasi-peridoicity was "highly unstable"
+
+```{r}
+x <- as.numeric(data_ts)
+t <- 1:length(x)
+f0 <- 1/period_est
+
+z <- x * exp(-1i * 2*pi*f0*t)
+```
+
+```{r}
+library(signal)
+library(pracma)
+bf <- butter(4, 0.02)   
+z_lp <- filtfilt(bf, z)
+phi <- Arg(z_lp)
+phi_unwrapped <- unwrap(phi)
+```
+
+```{r}
+phi_smooth <- filtfilt(butter(3, 0.01), phi_unwrapped)
+dphi <- c(NA, diff(phi_smooth))
+inst_freq <- dphi / (2*pi)
+inst_freq[abs(inst_freq) < 0.0005] <- NA
+
+inst_period <- 1 / inst_freq
+```
+
+```{r, fig.cap="Instantaneous Period of Sunspot Cycle (11 Years)"}
+plot(inst_period, type="l", 
+     main="",
+     ylab="Years")
+
+abline(h=11, col="red")
+```
+
+The 11 year data is, in fact, very unstable, even with multiple attempts at smoothing the phase.
+
+Now, since the paper mentioned the 22-year period being more stable, below are the findings as well.
+
+```{r}
+x <- as.numeric(data_ts)
+t <- 1:length(x)
+
+f0 <- 1/22
+z <- x * exp(-1i * 2*pi*f0*t)
+
+bf <- butter(4, 0.05)     
+z_lp <- filtfilt(bf, z)
+```
+
+```{r}
+amp <- Mod(z_lp)
+phi <- Arg(z_lp)
+phi_unwrapped <- unwrap(phi)
+bf2 <- butter(3, 0.01)
+phi_smooth <- filtfilt(bf2, phi_unwrapped)
+```
+
+```{r}
+dphi <- c(NA, diff(phi_smooth))
+inst_freq <- dphi / (2*pi)
+inst_freq[abs(inst_freq) < 1e-5] <- NA
+inst_period <- 1 / inst_freq
+```
+
+```{r, fig.cap="Instantaneous Period of Sunspot Cycle (22 Years)"}
+plot(inst_period, type="l",
+     main="",
+     ylab="Years")
+abline(h=22, col="red")
+```
+
+Now, considering the 22-year period as the period of interest, the instantaneous period still appears quite unstable. If the data was a smooth oscillation with gradually varying period, we certainly could have found a clear estimate of both period and the change in amplitude over time, since across centuries there would definitely have been some variance. However, the series is anharmonic, nonlinear, and contains multiple interacting cycle, meaning an instantaneous frequency is not exactly defined, so complex demodulation shows unstable results regardless of the defined period being 11 or 22 years.
+
+\newpage
+
+### Wavelet
+
+Traditional spectral methods, like the periodogram and AR-based estimates, assume that the underlying frequency structure is roughly constant over time. However, the sunspot series clearly shows changes in both amplitude and cycle length across decades, suggesting that a single global spectrum may not fully describe its behavior. To capture how the dominant periodicity evolves over time, we turn to wavelet analysis, which provides a time-frequency view of the data.
+
+```{r, fig.cap="Wavelet-Based Evolutive Harmonic Analysis", message = FALSE}
+library(WaveletComp)
+
+df1 <- data.frame(time = time(data_ts), value = as.numeric(data_ts))
+
+
+temp <- capture.output(
+  result <- analyze.wavelet(
+    df1,
+    "value",
+    loess.span = 0,
+    dt = 1,
+    dj = 1/20,
+    lowerPeriod = 2,
+    upperPeriod = 256,
+    make.pval = FALSE
+  )
+)
+
+wt.image(result, 
+         color.key = "quantile",
+         legend.params = list(lab = "Power"),
+         main = "")
+
+```
+
+The wavelet power spectrum shows a clear concentration of energy around periods close to 10–12 years across the entire series, confirming the well-known sunspot cycle. The thickness and slight vertical waviness of the red band indicate that the dominant cycle length is not perfectly constant but drifts modestly over time. Higher-period components (around 20–40 years) also appear with weaker but noticeable power, reflecting longer-term variability in solar activity. Overall, the wavelet plot highlights both the persistent \~11-year cycle and its gradual fluctuations across centuries.
+
+```{r}
+power <- result$Power        
+periods <- result$Period  
+dominant_periods <- apply(power, 2, function(col) {
+  periods[which.max(col)]
+})
+
+mean_dominant_period <- mean(dominant_periods, na.rm = TRUE)
+```
+
+For each time index $t$, let $P(\tau, t)$ denote the wavelet power at period $\tau$.\
+The dominant period at time $t$ is defined as
+
+$$
+\tau^{\ast}(t) = \arg\max_{\tau} P(\tau, t).
+$$
+
+The overall average dominant period is then computed as
+
+$$
+\overline{\tau} = \frac{1}{T} \sum_{t=1}^{T} \tau^{\ast}(t) = 10.9 \:\:years,
+$$
+
+where $T$ is the number of time points with a well-defined dominant period.
+
+\newpage
+
+### Multitaper
+
+In this project, we were also interested in how the dominant cycle changes over time rather than just identifying a single global period. While the methods we used earlier provide useful information, they do not capture local variations in the cycle length very well. The multitaper approach offers a more stable way to estimate the spectrum within moving windows, allowing us to track fluctuations in the sunspot period across centuries. Using this method, we can visualize how the estimated cycle length evolves over time, as shown in the following plot.
+
+```{r, warning = FALSE, fig.cap="Multitaper Time-Varying Period Estimate"}
+library(multitaper)
+
+win <- 96
+step <- 1
+
+periods <- c()
+years <- c()
+
+for (i in seq(1, length(x)-win, by=step)) {
+  seg <- x[i:(i+win)]
+  mt <- spec.mtm(seg, k=5, nw=3, plot=FALSE)
+  fpeak <- mt$freq[which.max(mt$spec)]
+  periods <- c(periods, 1/fpeak)
+  years <- c(years, i)
+}
+
+
+plot(years, periods, type="l", col="blue",
+     ylab="Cycle Length (Years)",
+     main="")
+
+abline(h=mean(periods), col="red", lty=2)
+
+usr <- par("usr")
+x_right <- usr[2] - 1*(usr[2] - usr[1])   # shift 5% inside the plot
+
+# Add the label
+text(x = x_right, y = mean(periods)*1.05,
+     labels = paste0("Mean = ", round(mean(periods), 2), " years"),
+     col="red", pos=4)
+```
+
+The multitaper rolling estimate shows that the dominant sunspot cycle varies over time, generally staying within the 9–13 year range. While the cycle is roughly centered near the expected value, noticeable fluctuations occur across different windows. The dashed red line marks the overall average cycle length of \~10.62 years, highlighting that the cycle is stable and consistent with the known information on average but not perfectly constant.
+
+# Discussion & Conclusion
+
+Text
 
 \pagebreak
+
 # References
 
-Dangi, S. (2023). CO2 emissions across countries, regions, and sectors [Data set]. Kaggle. https://www.kaggle.com/datasets/shreyanshdangi/co-emissions-across-countries-regions-and-sectors
+Berger A., et al. Evolutive Spectral Analysis of Sunspot Data over the past 300 years. Royal Society, 1990. https://www.jstor.org/stable/53602.
 
-National Centers for Environmental Information. (2023). National climate report: December 2023. NOAA. https://www.ncei.noaa.gov/news/national-climate-202312
+Dangi, S. (2023). CO2 emissions across countries, regions, and sectors [Data set]. Kaggle. <https://www.kaggle.com/datasets/shreyanshdangi/co-emissions-across-countries-regions-and-sectors>
 
-National Centers for Environmental Information. (2024). National climate report: December 2024. NOAA. https://www.ncei.noaa.gov/news/national-climate-202413
+National Centers for Environmental Information. (2023). National climate report: December 2023. NOAA. <https://www.ncei.noaa.gov/news/national-climate-202312>
 
-Nguyen, G. B. (2023). Average temperature from 1900 to 2023 [Data set]. Kaggle. https://www.kaggle.com/datasets/giabchnguyn/average-temperature-from-1900-to-2023
+National Centers for Environmental Information. (2024). National climate report: December 2024. NOAA. <https://www.ncei.noaa.gov/news/national-climate-202413>
 
-Ritchie, H., Roser, M., & Rosado, P. (2024). CO2 and greenhouse gas emissions. Our World in Data. https://ourworldindata.org/co2-emissions
+Nguyen, G. B. (2023). Average temperature from 1900 to 2023 [Data set]. Kaggle. <https://www.kaggle.com/datasets/giabchnguyn/average-temperature-from-1900-to-2023>
 
-United Nations. (n.d.). Climate change. United Nations. https://www.un.org/en/global-issues/climate-change 
+Ritchie, H., Roser, M., & Rosado, P. (2024). CO2 and greenhouse gas emissions. Our World in Data. <https://ourworldindata.org/co2-emissions>
+
+Royal Observatory of Belgium. Wolf Sunspot Number Data. SIDC. https://www.sidc.be/SILSO/datafiles
+
+United Nations. (n.d.). Climate change. United Nations. <https://www.un.org/en/global-issues/climate-change>
 
 \pagebreak
-https://www.un.org/en/global-issues/climate-change
 
-Original Emissions Data source:
+# Appendix Analysis A
 
-https://ourworldindata.org/co2-emissions
+## Levene's Test
 
-Compiled Emissions Data:
+```{r,  fig.cap= "Rolling 100-Year Variance of US Temperature"}
+# Rolling variance plot (window = 100 years)
+roll_var <- rollapply(df$Average_Fahrenheit_Temperature, width=10, FUN=var, by=1, align="right")
 
-https://www.kaggle.com/datasets/shreyanshdangi/co-emissions-across-countries-regions-and-sectors (primary data)
+mid <- floor(nrow(df)/2)
+var_first_half <- var(df$Average_Fahrenheit_Temperature[1:mid])
+var_second_half <- var(df$Average_Fahrenheit_Temperature[(mid+1):nrow(df)])
+var_first_half
+var_second_half
 
-Compiled Temperature Data:
+# Levene's Test
+df$period <- ifelse(df$year <= median(df$year), "Early", "Late")
+leveneTest(Average_Fahrenheit_Temperature ~ period, data=df)
+```
 
-https://www.kaggle.com/datasets/giabchnguyn/average-temperature-from-1900-to-2023 (supplementary temperature data)
+## Regression Models Summaries
+
+#### Full Model
+```{r}
+# Full model: time + population + gdp + co2 + nitrous oxide + methane
+model_full <- lm(Average_Fahrenheit_Temperature ~ year + population + gdp + co2 + nitrous_oxide + methane, data=df)
+summary(model_full)
+```
+#### Social Model
+```{r}
+# Socioeconomic only: time + population + gdp
+model_socio <- lm(Average_Fahrenheit_Temperature ~ year + population + gdp, data=df)
+summary(model_socio)
+```
+#### Emissions Model
+```{r}
+# Emissions only: time + co2 + nitrous oxide + methane
+model_emissions <- lm(Average_Fahrenheit_Temperature ~ year + co2 + nitrous_oxide + methane, data=df)
+summary(model_emissions)
+```
+#### Model Comparisons
+```{r}
+# Compare models
+AIC(model_full, model_socio, model_emissions)
+BIC(model_full, model_socio, model_emissions)
+paste0(summary(model_full)$adj.r.squared, " model full adj r squared")
+paste0(summary(model_socio)$adj.r.squared, " model socio adj r squared")
+paste0(summary(model_emissions)$adj.r.squared, " model emissions adj r squared")
+```
+
+## Regression and Residual Analysis
+
+#### Full Model
+```{r}
+# Residual plots
+par(mar = c(4,4,2,1)) 
+par(mfrow=c(2,2))
+plot(model_full)
+```
+
+#### Social Model
+```{r}
+plot(model_socio)
+```
+
+#### Emissions Model
+```{r}
+plot(model_emissions)
+```
+
+### Residual Analysis and ACF plots
+
+#### Full model
+```{r}
+# Residual autocorrelation
+acf(residuals(model_full), main="ACF of Residuals: Full Model")
+Box.test(residuals(model_full), type="Ljung-Box")
+```
+
+#### Social Model
+
+```{r}
+acf(residuals(model_socio), main="ACF of Residuals: Socio Model")
+Box.test(residuals(model_socio), type="Ljung-Box")
+```
+
+#### Emissions Model
+
+```{r}
+acf(residuals(model_emissions), main="ACF of Residuals: Emissions Model")
+Box.test(residuals(model_emissions), type="Ljung-Box")
+```
+
+## Forecasting future 5 values
+
+```{r}
+summary(df$population)
+summary(df$gdp)
+summary(df$co2)
+summary(df$nitrous_oxide)
+summary(df$methane)
+
+```
+
+```{r}
+last_gdp <- tail(na.omit(df$gdp), 1)
+
+future_years <- data.frame(
+  year = (max(df$year) + 1):(max(df$year) + 5),
+  co2 = tail(df$co2,1) * (1 + 0.01)^(1:5),
+  nitrous_oxide = tail(df$nitrous_oxide,1) * (1 + 0.01)^(1:5),
+  methane = tail(df$methane,1) * (1 + 0.01)^(1:5)
+)
+
+str(future_years)
+any(is.na(future_years))
 
 
-2023 us temp:
-https://www.ncei.noaa.gov/news/national-climate-202312
+```
 
-2024 us temp: 
-https://www.ncei.noaa.gov/news/national-climate-202413
+```{r}
+final_model <- model_emissions
 
-# Appendix
+future_forecast <- predict(final_model, newdata = future_years, interval = "prediction")
+future_forecast
+
+```
 
 ### Data dictionary
+
 Stuff:
+
+# Appendix Analysis C
+
