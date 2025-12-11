@@ -1,6 +1,6 @@
 ---
 title: "Climate Change Analysis in the United States: The Impact of Socioeconomic and Industry on Average Temperature and Wolf Sunspot Cycle Spectral Analysis"
-author: "Sasha Matveev  netID(matveev2) Vladislav Fedorov netID(vvf2)"
+author: "Sasha Matveev  netID(matveev2), Vladislav Fedorov netID(vvf2)"
 
 output:
   pdf_document:
@@ -16,6 +16,7 @@ knitr::opts_chunk$set(message = FALSE)
 knitr::opts_chunk$set(fig.align='center')
 knitr::opts_chunk$set(fig.width=5)
 knitr::opts_chunk$set(fig.height=3)
+knitr::opts_chunk$set(fig.pos='H')
 ```
 
 ```{r}
@@ -31,15 +32,22 @@ library(zoo)
 library(car)
 library(knitr)
 library(kableExtra)
+library(tibble)
 ```
 
+\vfill
+# Author Note
+
+The authors made the following contributions. Sasha Matveev worked on Analysis A including all code, analysis, preparation, and writing. Vladislav Fedorov worked on Analysis C including all code, analysis, preparation, and writing. Together the authors worked on formatting the report and editing the content. 
 
 \pagebreak
 
 # Abstract
 
-The goal of the study is split into two parts, the goal of Analysis A is to investigate the relationship between greenhouse gas emissions and the average annual temperature in the United States from 1900 to 2023 while identifying the most influential factors affecting climate change over time. The goal of Analysis C is to investigate and confirm the underlying periodicity of Wolf sunspot solar cycle. In Analysis A we compared three models fit on exclusive social factors, exclusively emissions factors and a third model fit on both catergories of climate change factors to determine the strongest predictors of the average annual temperature. We found that the emissions model provided the best fit for the data and was able to forecast future values, capturing actual average annual temperatures within the 95% confidence intervals for 2023 and 2024. For Analysis C we used multiple spectral analysis tools, which included periodograms, wavelet analysis, and multitaper analysis, and were able to confirm that the most dominant period of the sunspot solar cycle is approximately 11 years, which is consistent with the past research. 
-# Analysis A Climate Change
+The goal of the study is split into two parts - the goal of Analysis A is to investigate the relationship between social and industrial factors contributing to climate change. We measure this using the average annual temperature with a focus on the United States from 1900 to 2023, aiming to determine strongest contributors and predictors of the average annual temperature. The goal of Analysis C is to investigate and confirm the underlying periodicity of Wolf sunspot solar cycle using the data containing the mean number of sunspots across approximately 300 years. In Analysis A we compared three models fit exclusively on social factors, exclusively on emissions factors, and a third model fit on both categories of climate change factors to determine the strongest predictors of the average annual temperature. We found that the emissions model provided the best fit for the data and was able to forecast future values, capturing actual average annual temperatures within the 95% confidence intervals for 2023 and 2024. The results of the study underline the complexity of climate change while also showing that statistical models can be used to inform lawmakers in potential mitigation efforts. In Analysis C we used multiple spectral analysis tools, which included periodograms, wavelet analysis, and multitaper analysis, and determined that the most dominant period of the sunspot solar cycle is approximately 11 years. The result is consistent with the past research, confirming the effectiveness of current methodology to model solar cycle periodicity.
+
+
+# Analysis A: Climate Change
 
 # Introduction
 
@@ -191,21 +199,23 @@ Another potential major shortcoming of this model is its simplicity as we includ
 
 Future studies may explore various avenues of improving upon the results achieved by this exploration. As mentioned previously, expanding the dataset to include more countries and potentially more variables such as deforestation rates, industrial activity levels, energy production and consumption could all assist in making the model more robust and capture more of the variance in the average annual temperature. Making the model more robus may also increase the accuracy of its forecasting although more complex models are more likely to overfit so a balance should be struck. In addition, a different target variable may be used to model different aspects of climate change such as sea level rise. Furthermore, a potential area of improvement to the current modeling approach that is relatively easy to implement but was beyond the scope of the study is the use of model selection techniques such as forward, backward, or stepwise selection to remove statistically insignificant predictors from the results.
 
-The study shows that the primary factors associated with a change in the average annual temperature in the U.S. between 1900 and 2022 were CO2 and methane emissions. Another factor that showed some association with the average annual temperature was GDP in the social factors only model which makes sense as GDP is a measure of economic activity and industry which produce greenhouse gas emissions. The emissions model fit with the CO2 and methane emissions predictors offered moderate forecasting power for the average annual temperature over the next five years with confidence intervals that contained the actual observed values for 2023 and 2024. The techniques implemented in this study highlight the complexity of climate change as an issue but highlight the potential to model and forecast its effects using statistical methods to provide lawmakers with actionable insights that could be used to alleviate its impact on humanity in the coming century.
+The study shows that the primary factors associated with a change in the average annual temperature in the U.S. between 1900 and 2022 were CO2 and methane emissions. Another factor that showed some association with the average annual temperature was GDP in the social factors only model which makes sense as GDP is a measure of economic activity and industry which produce greenhouse gas emissions. The emissions model fit with the CO2 and methane emissions predictors offered moderate forecasting power for the average annual temperature over the next five years with confidence intervals that contained the actual observed values for 2023 and 2024. The techniques implemented in this study not only highlight the complexity of climate change as an issue but also highlight the potential to model and forecast its effects using statistical methods to provide lawmakers with actionable insights that could be used to alleviate its impact on humanity in the coming century.
 
 \newpage
 
-# Analysis C Report
+# Analysis C: Sunspot Spectral Analysis
 
 # Introduction
 
-Magnetic activity of the Sun is an important topic in astronomy, both today and in the past, because it is a driving factor in solar flares and solar storms, knowing which is...
-Now, 
+Magnetic activity of the Sun is a crucial topic in astronomy, both today and in the past, because it is a driving factor in solar flares and solar storms which can affect function of satellites, power grids and communication systems on Earth. Knowing when to expect flares and storms can help in preparing for these potentially disruptive and dangerous events so we can mitigate their consequences with minimal damage. The number of sunspots tracked across the years serves as a visible record of this magnetic activity, letting us see when the Sun is entering more energetic phases. Using spectral analysis, we will study the mean number of sunspots per year across more than three centuries worth of data and examine whether the underlying period of the solar cycle is consistent with previous domain knowledge or whether it has shifted over time.
+
+# Data Overview
+
+The data for this analysis comes from the Royal Observatory of Belgium. It contains the following variables of interest: year - calendar years ranging from 1700.5 to 2024.5; mean number of sunspots - the average number of sunspots detected on the Sun's surface during the corresponding calendar year. Analyzing variations the average number of sunspots each year will provide an insight into the solar cycle's periodicity. 
 
 # Literature Review
 
-Spectral analysis is used to detect cycles in a time series by examining its frequency structure. Basic tools like the periodogram can reveal strong cycles, but they are often quite noisy, so methods like the multitaper or wavelet approaches are used to get smoother and more reliable results. These techniques are especially helpful when the underlying cycle is not perfectly steady over time. For example, in the sunspot data, the length of the solar cycle drift across decades, making it a good case for more advanced spectral tools like wavelet transform and miltitaper analysis. With several centuries of observations, the dataset clearly shows both the dominant 11-year cycle and how its behavior varies over time. 
-In a related paper, ...
+Spectral analysis is used to detect cycles in a time series by examining its frequency structure. Basic tools like the periodogram can reveal strong cycles, but they are often quite noisy, so methods like the multitaper or wavelet approaches are used to get smoother and more reliable results. In a related paper, Berger A., et al (1990) also discuss amplitude and phase estimation using, for instance, complex demodulation. These techniques are especially helpful when the underlying cycle is not perfectly steady over time. For example, in the sunspot data, the length of the solar cycle drift across decades, making it a good case for more advanced spectral tools like wavelet transform and miltitaper analysis. With several centuries of observations, the dataset clearly shows both the dominant 11-year cycle and how its behavior varies over time.
 
 ```{r}
 library(tidyverse)
@@ -219,7 +229,7 @@ library(tseries)
 data <-read_delim("SN_y_tot_V2.0.csv", 
     delim = ";", escape_double = FALSE, col_names = FALSE, 
     trim_ws = TRUE, show_col_types = FALSE)
-names(data) = c("Year", "Mean Sunspots", "Mean SD", "Observations", "Marker")
+names(data) = c("Year", "Sunspots", "Mean SD", "Observations", "Marker")
 ```
 
 ```{r}
@@ -238,31 +248,23 @@ Since this is a time series analysis first and foremost, the initial visualizati
 tsplot(data_ts, ylab = "Mean Number of Sunspots")
 ```
 
-From the plot, the data clearly has a strong sinusoidal structure. The amplitude varies over time, and the cycle length does as well, indicating that the oscillation is not perfectly regular.
-
-```{r}
-adf.test(data_ts, )
-```
-
-The ADF test suggests the series is stationary, although this does not affect the choice of methods here, and it is simply an interesting observation.
+From the plot, the data clearly has a strong sinusoidal structure. The amplitude varies over time, and the cycle length does as well, indicating that the oscillation is not perfectly regular. With that said, the ADF test (the code for which can be found in the Analysis C section of the Appendix) suggests the series is stationary, although this does not fully affect the choice of methods here, and it is simply an interesting observation.
 
 ### Periodograms
 
-When it comes to spectral analysis, the most common first approach is a periodogram - a plot showcasing dominance of different period frequencies in cycles per year. By examining the height and location of the peaks in the periodogram, we can determine which cycles are most prominent and obtain a rough estimate of their lengths. This serves as a baseline before applying smoother or more advanced techniques.
+When it comes to spectral analysis, the most common first approach is a raw periodogram - a plot showcasing dominance of different period frequencies in cycles per year. By examining the height and location of the peaks in the periodogram, we can determine which cycles are most prominent and obtain a rough estimate of their lengths. This serves as a baseline before applying smoother or more advanced techniques.
 
 ```{r, echo = FALSE, fig.cap="Raw Periodogram for Sunspot Data"}
 x <- data_ts - mean(data_ts)
 s_un <- spec.pgram(x, log = "no", main = "")
 ```
 
-In the figure above, we can see a spike that is most dominant at and slightly before the frequency of 0.1 cycles per year. The plot is, however, very raw and it is unclear as to which frequency is the underlying one. To obtain a better visualization, we will use simple smoothing for the periodogram
+In the figure above, we can see a spike that is most dominant at and slightly before the frequency of 0.1 cycles per year. The plot is, however, very raw and it is unclear as to which frequency is the underlying one. To obtain a better visualization, we will use simple smoothing for the periodogram.
 
 ```{r, fig.cap="Smoothed Periodogram"}
 s_sm <- spec.pgram(x, spans = c(5,5), log = "no", 
                    main="")
 ```
-
-With the smoothed periodogram, the dominant peak becomes much easier to see. The main frequency is slightly below 0.1 cycles per year, which corresponds to a period of roughly 11 years, consistent with what is known about sunspot activity.
 
 ```{r}
 spec <- spec.pgram(x, plot=FALSE)
@@ -270,7 +272,9 @@ freq_max <- spec$freq[which.max(spec$spec)]
 period_est <- 1 / freq_max
 ```
 
-Now, using the frequnecy data, we estimated dominant frequency of the series by identifying the value of $f$ at which the spectral density $S(f)$ reaches its maximum:
+With the smoothed periodogram, the dominant peak becomes much easier to see. The main frequency is slightly below 0.1 cycles per year, which corresponds to a period of roughly 11 years, consistent with what is known about sunspot activity.
+
+Now, using the frequency data, we estimated dominant frequency of the series by identifying the value of $f$ at which the spectral density $S(f)$ reaches its maximum:
 
 $$
 f^{\ast} = \arg\max_{f} S(f).
@@ -280,7 +284,9 @@ The corresponding cycle length was then obtained by inverting this frequency:
 
 $$
 T = \frac{1}{f^{\ast}} = 10.90909 \:\:years 
-$$
+$$ (The code used for this calculation can be found in the Analysis C section of the Appendix)
+
+### AR Spectral Density
 
 For appropriate procedure, we also wanted to examine the spectral density of this data by fitting an AR(p) model to the time series. It offers a parametric perspective, allowing us to assess whether the dominant periodicity remains consistent under a fitted time-series model.
 
@@ -289,11 +295,13 @@ ar_fit <- ar(x, method = "yw")
 s_ar <- spec.ar(x, main="")
 ```
 
-\newpage
+The plot above also clearly shows a peak at slightly below 0.1 cycles per year, leading to the conclusion of the underlying period being approximately 11 years. However, while the spectral density plot does perform better than the raw periodogram, it essential leads to the same result as a smoothed periodogram while also requiring stationarity, making it useful only in specific situations, which this study is an example of. Thus, this approach serves only as a helpful confirmation rather than a different insight into the data.
+
+\pagebreak
 
 ### Complex Demodulation
 
-Since based on the time series plot the data looked like a drifting oscillation, and the referenced paper also mentioned using it, we wanted to try implementing complex demodulation as one of the methods to extract the instantaneous period. Pratt, David W., et al, however, did not provide the results of complex demodulation at both 11 and 22-year periods, and only mentioned that the 11-year-quasi-peridoicity was "highly unstable"
+Since based on the time series plot the data looked like a drifting oscillation, and the referenced paper also mentioned using it, we wanted to try implementing complex demodulation as one of the methods to extract the instantaneous period. Berger A., et al, however, did not use it to approximate the period and only used it for amplitude and phase estimation. They also mentioned that the 11-year-quasi-peridoicity was "highly unstable" (Berger et al., 138).
 
 ```{r}
 x <- as.numeric(data_ts)
@@ -329,9 +337,7 @@ plot(inst_period, type="l",
 abline(h=11, col="red")
 ```
 
-The 11 year data is, in fact, very unstable, even with multiple attempts at smoothing the phase.
-
-Now, since the paper mentioned the 22-year period being more stable, below are the findings as well.
+As can be seen in the plot above, both curves diverge to infinity and negative infinity, suggesting that the 11 year data is, in fact, very unstable, even with multiple attempts at smoothing the phase. Now, since the paper mentioned the 22-year period being more stable, below are the findings as well.
 
 ```{r}
 x <- as.numeric(data_ts)
@@ -366,13 +372,11 @@ plot(inst_period, type="l",
 abline(h=22, col="red")
 ```
 
-Now, considering the 22-year period as the period of interest, the instantaneous period still appears quite unstable. If the data was a smooth oscillation with gradually varying period, we certainly could have found a clear estimate of both period and the change in amplitude over time, since across centuries there would definitely have been some variance. However, the series is anharmonic, nonlinear, and contains multiple interacting cycle, meaning an instantaneous frequency is not exactly defined, so complex demodulation shows unstable results regardless of the defined period being 11 or 22 years.
-
-\newpage
+Now, considering the 22-year period as the period of interest, the instantaneous period still appears quite unstable with both curves still diverging to inifinity. If the data was a smooth oscillation with gradually varying period, we certainly could have found a clear estimate of both period and the change in amplitude over time, since across centuries there would definitely have been some variance. However, the series is anharmonic, nonlinear, and contains multiple interacting cycle, meaning an instantaneous frequency is not exactly defined, so complex demodulation shows unstable results regardless of the defined period being 11 or 22 years.
 
 ### Wavelet
 
-Traditional spectral methods, like the periodogram and AR-based estimates, assume that the underlying frequency structure is roughly constant over time. However, the sunspot series clearly shows changes in both amplitude and cycle length across decades, suggesting that a single global spectrum may not fully describe its behavior. To capture how the dominant periodicity evolves over time, we turn to wavelet analysis, which provides a time-frequency view of the data.
+Traditional spectral methods, like the periodogram and AR-based estimates, assume that the underlying period is roughly constant over time. However, the sunspot series clearly shows changes in both amplitude and cycle length across the years, suggesting that a single global spectrum may not fully describe its behavior. To capture how the dominant periodicity changes over time, we will use wavelet analysis.
 
 ```{r, fig.cap="Wavelet-Based Evolutive Harmonic Analysis", message = FALSE}
 library(WaveletComp)
@@ -400,7 +404,10 @@ wt.image(result,
 
 ```
 
-The wavelet power spectrum shows a clear concentration of energy around periods close to 10–12 years across the entire series, confirming the well-known sunspot cycle. The thickness and slight vertical waviness of the red band indicate that the dominant cycle length is not perfectly constant but drifts modestly over time. Higher-period components (around 20–40 years) also appear with weaker but noticeable power, reflecting longer-term variability in solar activity. Overall, the wavelet plot highlights both the persistent \~11-year cycle and its gradual fluctuations across centuries.
+The wavelet power spectrum shows a clear concentration of energy around periods close to 10–12 years across the entire series, confirming the well-known sunspot cycle. The thickness of the red band suggests that the dominant cycle length is not perfectly constant but changes over time. Higher-period components (around 30–120 years, seen with the orange band) also appear with weaker but noticeable power. Overall, the wavelet plot highlights both the persistent approximate 11-year cycle and its gradual fluctuations across centuries.
+
+For each time index $t$, let $P(\tau, t)$ be the wavelet power at period $\tau$.\
+The dominant period at time $t$ is defined as
 
 ```{r}
 power <- result$Power        
@@ -412,9 +419,6 @@ dominant_periods <- apply(power, 2, function(col) {
 mean_dominant_period <- mean(dominant_periods, na.rm = TRUE)
 ```
 
-For each time index $t$, let $P(\tau, t)$ denote the wavelet power at period $\tau$.\
-The dominant period at time $t$ is defined as
-
 $$
 \tau^{\ast}(t) = \arg\max_{\tau} P(\tau, t).
 $$
@@ -425,9 +429,7 @@ $$
 \overline{\tau} = \frac{1}{T} \sum_{t=1}^{T} \tau^{\ast}(t) = 10.9 \:\:years,
 $$
 
-where $T$ is the number of time points with a well-defined dominant period.
-
-\newpage
+where $T$ is the number of time points with a well-defined dominant period. (The code used for this calculation can be found in the Analysis C section of the Appendix)
 
 ### Multitaper
 
@@ -466,31 +468,77 @@ text(x = x_right, y = mean(periods)*1.05,
      col="red", pos=4)
 ```
 
-The multitaper rolling estimate shows that the dominant sunspot cycle varies over time, generally staying within the 9–13 year range. While the cycle is roughly centered near the expected value, noticeable fluctuations occur across different windows. The dashed red line marks the overall average cycle length of \~10.62 years, highlighting that the cycle is stable and consistent with the known information on average but not perfectly constant.
+The multitaper rolling estimate shows that the dominant sunspot cycle varies over time, generally staying within the 9–13 year range. While the cycle is roughly centered near the expected value, noticeable fluctuations occur across different windows. The dashed red line marks the overall average cycle length of approximately 10.62 years, highlighting that the cycle is stable and consistent with the known information on average but not perfectly constant.
 
 # Discussion & Conclusion
 
-Text
+Outside of complex demodulation, which was not quite suited for period estimation in this particular study, all models strongly agree on the dominant cycle length of approximately 11 years, showing that the period has not shifted and is consistent with past research. While this is well-known information, understanding how it is obtained was still important both for astronomy, where accurate cycle estimates inform of solar activity, and statistics, where this dataset serves as a great example of periodic behaviour.
+
+When looked at on their own, the most useful approaches were Wavelet Analysis and Multitaper Analysis, as they both provided the dominant period and clearly showed variations of said period across the windows of time and how strong those variations were.
+
+Overall, however, while all of the tools did show us something useful, all of them complement one another. Together, they provide a more complete understanding for the underlying period of the sunspot solar cycle and show why multiple spectral tools are usually needed to fully characterize complex and, in this case, astronomical time series.
+
+Now, there is not much to be done in terms of improvements for future research, since this topic is already quite well-studied. In theory, more data would allow a sharper estimate of the solar cycle’s true period, but collecting several additional centuries of observations may not be practical within the typical research timeline.
 
 \pagebreak
 
 # References
 
-Berger A., et al. Evolutive Spectral Analysis of Sunspot Data over the past 300 years. Royal Society, 1990. https://www.jstor.org/stable/53602.
+Berger A., et al. Evolutive Spectral Analysis of Sunspot Data over the past 300 years. Royal Society, 1990. \hangindent=1.27cm <https://www.jstor.org/stable/53602>.
 
-Dangi, S. (2023). CO2 emissions across countries, regions, and sectors [Data set]. Kaggle. <https://www.kaggle.com/datasets/shreyanshdangi/co-emissions-across-countries-regions-and-sectors>
+Dangi, S. (2023). CO2 emissions across countries, regions, and sectors [Data set]. Kaggle. \hangindent=1.27cm <https://www.kaggle.com/datasets/shreyanshdangi/co-emissions-across-countries-regions-and-sectors>
 
-National Centers for Environmental Information. (2023). National climate report: December 2023. NOAA. <https://www.ncei.noaa.gov/news/national-climate-202312>
+National Centers for Environmental Information. (2023). National climate report: December 2023. NOAA. \hangindent=1.27cm <https://www.ncei.noaa.gov/news/national-climate-202312>
 
-National Centers for Environmental Information. (2024). National climate report: December 2024. NOAA. <https://www.ncei.noaa.gov/news/national-climate-202413>
+National Centers for Environmental Information. (2024). National climate report: December 2024. NOAA.\hangindent=1.27cm <https://www.ncei.noaa.gov/news/national-climate-202413>
 
-Nguyen, G. B. (2023). Average temperature from 1900 to 2023 [Data set]. Kaggle. <https://www.kaggle.com/datasets/giabchnguyn/average-temperature-from-1900-to-2023>
+Nguyen, G. B. (2023). Average temperature from 1900 to 2023 [Data set]. Kaggle. \hangindent=1.27cm <https://www.kaggle.com/datasets/giabchnguyn/average-temperature-from-1900-to-2023>
 
-Ritchie, H., Roser, M., & Rosado, P. (2024). CO2 and greenhouse gas emissions. Our World in Data. <https://ourworldindata.org/co2-emissions>
+Ritchie, H., Roser, M., & Rosado, P. (2024). CO2 and greenhouse gas emissions. Our World in Data. \hangindent=1.27cm <https://ourworldindata.org/co2-emissions>
 
-Royal Observatory of Belgium. Wolf Sunspot Number Data. SIDC. https://www.sidc.be/SILSO/datafiles
+Royal Observatory of Belgium. Wolf Sunspot Number Data. SIDC. <https://www.sidc.be/SILSO/datafiles>
 
-United Nations. (n.d.). Climate change. United Nations. <https://www.un.org/en/global-issues/climate-change>
+United Nations. (n.d.). Climate change. United Nations. \hangindent=1.27cm <https://www.un.org/en/global-issues/climate-change> 
+
+
+\pagebreak
+
+# Data Dictionary Analysis A
+
+```{r, echo=FALSE, message=FALSE}
+
+data_dict <- tribble(
+  ~"Variable Name",              ~"Units",                                   ~"Missing Values", ~"Source",
+  "year",                      "Year (annual)",                           "None&nbsp;&nbsp;&nbsp;",          "Our World In Data",
+  "population",                "Number of people",                        "None",          "Our World In Data",
+  "gdp",                       "Inflation-and cost-of-living-adjusted USD", "None",       "Our World In Data",
+  "co2 emissions",             "Million metric tons",                     "None",          "Our World In Data",
+  "methane emissions",         "Metric tons",                             "None",          "Our World In Data",
+  "nitrous oxide emissions",   "Metric tons",                             "None",          "Our World In Data",
+  "average temperature (F)",                "Degrees Fahrenheit (annual average)",     "None",          "NCEI"
+)
+
+kable(
+  data_dict,
+  caption = "Data Dictionary for Variables Used in Analysis A"
+)
+
+```
+
+# Data Dictionary Analysis C
+
+```{r, echo=FALSE, message=FALSE}
+data_dict <- tribble(
+  ~"Variable Name", ~"Units", ~"Missing Values", ~"Source",
+  "Year&nbsp;&nbsp;&nbsp;",           "Year (annual)",            "None&nbsp;&nbsp;&nbsp;", "Royal Observatory of Belgium",
+  "Sunspots",       "Mean annual sunspot count", "None",                   "Royal Observatory of Belgium"
+)
+
+kable(
+  data_dict,
+  caption = "Data Dictionary for Variables Used in Analysis C"
+)
+```
 
 \pagebreak
 
@@ -498,7 +546,7 @@ United Nations. (n.d.). Climate change. United Nations. <https://www.un.org/en/g
 
 ## Levene's Test
 
-```{r,  fig.cap= "Rolling 100-Year Variance of US Temperature"}
+```{r, include = TRUE, echo = TRUE,  fig.cap= "Rolling 100-Year Variance of US Temperature"}
 # Rolling variance plot (window = 100 years)
 roll_var <- rollapply(df$Average_Fahrenheit_Temperature, width=10, FUN=var, by=1, align="right")
 
@@ -515,26 +563,33 @@ leveneTest(Average_Fahrenheit_Temperature ~ period, data=df)
 
 ## Regression Models Summaries
 
-#### Full Model
-```{r}
+### Full Model
+
+```{r, include = TRUE, echo = TRUE}
 # Full model: time + population + gdp + co2 + nitrous oxide + methane
 model_full <- lm(Average_Fahrenheit_Temperature ~ year + population + gdp + co2 + nitrous_oxide + methane, data=df)
 summary(model_full)
 ```
-#### Social Model
-```{r}
+
+### Social Model
+
+```{r, include = TRUE, echo = TRUE}
 # Socioeconomic only: time + population + gdp
 model_socio <- lm(Average_Fahrenheit_Temperature ~ year + population + gdp, data=df)
 summary(model_socio)
 ```
-#### Emissions Model
-```{r}
+
+### Emissions Model
+
+```{r, include = TRUE, echo = TRUE}
 # Emissions only: time + co2 + nitrous oxide + methane
 model_emissions <- lm(Average_Fahrenheit_Temperature ~ year + co2 + nitrous_oxide + methane, data=df)
 summary(model_emissions)
 ```
-#### Model Comparisons
-```{r}
+
+### Model Comparisons
+
+```{r, include = TRUE, echo = TRUE}
 # Compare models
 AIC(model_full, model_socio, model_emissions)
 BIC(model_full, model_socio, model_emissions)
@@ -545,50 +600,54 @@ paste0(summary(model_emissions)$adj.r.squared, " model emissions adj r squared")
 
 ## Regression and Residual Analysis
 
-#### Full Model
-```{r}
+### Full Model
+
+```{r, include = TRUE, echo = TRUE}
 # Residual plots
 par(mar = c(4,4,2,1)) 
 par(mfrow=c(2,2))
 plot(model_full)
 ```
 
-#### Social Model
-```{r}
+### Social Model
+
+```{r, include = TRUE, echo = TRUE}
 plot(model_socio)
 ```
 
-#### Emissions Model
-```{r}
+### Emissions Model
+
+```{r, include = TRUE, echo = TRUE}
 plot(model_emissions)
 ```
 
 ### Residual Analysis and ACF plots
 
-#### Full model
-```{r}
+### Full model
+
+```{r, include = TRUE, echo = TRUE}
 # Residual autocorrelation
 acf(residuals(model_full), main="ACF of Residuals: Full Model")
 Box.test(residuals(model_full), type="Ljung-Box")
 ```
 
-#### Social Model
+### Social Model
 
-```{r}
+```{r, include = TRUE, echo = TRUE}
 acf(residuals(model_socio), main="ACF of Residuals: Socio Model")
 Box.test(residuals(model_socio), type="Ljung-Box")
 ```
 
-#### Emissions Model
+### Emissions Model
 
-```{r}
+```{r, include = TRUE, echo = TRUE}
 acf(residuals(model_emissions), main="ACF of Residuals: Emissions Model")
 Box.test(residuals(model_emissions), type="Ljung-Box")
 ```
 
 ## Forecasting future 5 values
 
-```{r}
+```{r, include = TRUE, echo = TRUE}
 summary(df$population)
 summary(df$gdp)
 summary(df$co2)
@@ -597,7 +656,7 @@ summary(df$methane)
 
 ```
 
-```{r}
+```{r, include = TRUE, echo = TRUE}
 last_gdp <- tail(na.omit(df$gdp), 1)
 
 future_years <- data.frame(
@@ -613,17 +672,37 @@ any(is.na(future_years))
 
 ```
 
-```{r}
+```{r, include = TRUE, echo = TRUE}
 final_model <- model_emissions
 
 future_forecast <- predict(final_model, newdata = future_years, interval = "prediction")
 future_forecast
-
 ```
-
-### Data dictionary
-
-Stuff:
 
 # Appendix Analysis C
 
+### Sunspot Time Series ADF Test
+
+```{r, include = TRUE, echo = TRUE}
+adf.test(data_ts, )
+```
+
+### Smoothed Periodogram Period
+
+```{r, include = TRUE, echo = TRUE}
+spec <- spec.pgram(x, plot=FALSE)
+freq_max <- spec$freq[which.max(spec$spec)]
+period_est <- 1 / freq_max
+```
+
+### Wavelet Period
+
+```{r, include = TRUE, echo = TRUE}
+power <- result$Power        
+periods <- result$Period  
+dominant_periods <- apply(power, 2, function(col) {
+  periods[which.max(col)]
+})
+
+mean_dominant_period <- mean(dominant_periods, na.rm = TRUE)
+```
